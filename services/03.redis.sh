@@ -2,7 +2,7 @@
 if [ "$RUST_AGENT_INFRA_DIR" = "" ]
 then
         echo "RUST_AGENT_INFRA_DIR environment variable not found ! "
-        echo "Source the release file in the agent-infra directory !"
+        echo "Source the release file in the rust-agent-infra directory !"
         exit 1
 fi
 

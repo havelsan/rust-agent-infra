@@ -1,4 +1,4 @@
-# agent-infra
+# rust-agent-infra
 
 Agent-infra repository contains scripts, descriptions and example use cases of a local/offline/air-gapped agentic development environment.
 
@@ -61,11 +61,11 @@ Architecture design records about :
 
 ##  Installation of Services and Tools 
 
-Clone this repository into your wworkspace directory, source the release file and run the ~/workspace/agent-infra/install/00.main.sh  script.
+Clone this repository into your wworkspace directory, source the release file and run the ~/workspace/rust-agent-infra/install/00.main.sh  script.
     
 ##  Starting Services
 
-After installing services and tools, source the ~/workspace/agent-infra/release file then start services by running the ~/workspace/agent-infra/services/00.main.sh script.
+After installing services and tools, source the ~/workspace/rust-agent-infra/release file then start services by running the ~/workspace/rust-agent-infra/services/00.main.sh script.
 
 
 ## Simple Usage Example 
@@ -83,7 +83,7 @@ After starting the services, we are ready to use kilo agentic coding tool.
 We prepared rust development environment using https://github.com/havelsan/rust-dev-env in directory ~/sdk/rust-dev-env and we will use the compiler and cargo from that directory.
 
 	source ~/sdk/rust-dev-env/release
-	source ~/workspace/agent-infra/release
+	source ~/workspace/rust-agent-infra/release
 	cd ~/agentspace/agent-managed-rust-project
 	## NOTE: WE USE CTRL-INSERT TO PASTE TEXT.
 	kilo
@@ -102,7 +102,7 @@ We prepared rust development environment using https://github.com/havelsan/rust-
 #### Code Review
 
 	source ~sdk/rust-dev-env/release
-	source ~/workspace/agent-infra/release
+	source ~/workspace/rust-agent-infra/release
 	cd ~/agentspace/agent-managed-rust-project
 	kilo
 		> your role is "code reviewer". review the code in the simple_calculator directory and evaluate the codes by using the coding principles in ~/sdk/rust-dev-env/reference-projects/PRINCIPLES.md and ~/sdk/rust-dev-env/reference-projects/COMMON_MISTAKES.md. Run cargo clippy --all-targets --all-features to verify warnings. Note the issues into the ~/agentspace/agent-managed-rust-project/simple_calculator/issues/REVIEW-001.md  file.
@@ -112,7 +112,7 @@ We prepared rust development environment using https://github.com/havelsan/rust-
 #### Code Improvement
 
 	source ~sdk/rust-dev-env/release
-	source ~/workspace/agent-infra/release
+	source ~/workspace/rust-agent-infra/release
 	cd ~/agentspace/agent-managed-rust-project
 	kilo
 		> Make a step by step plan for to improve the code in simple_calculator project using the code review notes in ~/agentspace/agent-managed-rust-project/simple_calculator/issues/REVIEW-001.md and write the into ~/agentspace/agent-managed-rust-project/simple_calculator/plans/PLAN-01.md.  Steps of the plan should be as small as possible so that we can fit into 32k context :) 
@@ -129,7 +129,7 @@ Now we configure token reduction tools, you may check the descriptions of each t
 
 
 	source ~sdk/rust-dev-env/release
-	source ~/workspace/agent-infra/release
+	source ~/workspace/rust-agent-infra/release
 	cd ~/agentspace/agent-managed-rust-project
 	rtk init --agent kilocode
 	graphify kilo install
@@ -157,10 +157,10 @@ To be sure about graphify output is used by kilo code , we ask to kilo code : "W
 0. Switch to a user that can NOT execute sudo commands, and also that does NOT have git master/tag privileges.
 1. Clone a copy of your project into a directory.
 2. Checkout a branch that "kilo code agent" can commit. (or even push)
-3. Source the release file : ~workspace/agent-infra/release 
-4. Run the harness installation script : ( ~workspace/agent-infra/harness/install_kilo_harness.sh)  
+3. Source the release file : ~workspace/rust-agent-infra/release 
+4. Run the harness installation script : ( ~workspace/rust-agent-infra/harness/install_kilo_harness.sh)  
 
-This command create .kilo directory if it does not exists , and creates links (if not exists) to the skill/mode/workflow files found in the ~/workspace/agent-infra/harness directory.
+This command create .kilo directory if it does not exists , and creates links (if not exists) to the skill/mode/workflow files found in the ~/workspace/rust-agent-infra/harness directory.
 
 NOTE: we could also install in ~/.config/kilo/ directory. But we don't prefer to make a global installation, we install to only in-repository <project_dir>/.kilo directory.
 
@@ -291,8 +291,8 @@ Before starting to work with agents we create the folowing organization, users a
             3. Token Permissions : (activitypub, issue, misc, notification, organization, package, repository, user)  , (  Read and Write )
             4. Click on the "Create Token" button
             5. copy the token appearing on the top of the page.
-            6. insert the "export HUMAN1_PERSONAL_ACCESS_TOKEN=a33d9663ceab39378746095a5919ff5c1d384044" line in the $HOME/workspace/agent-infra/release 
-   9. In the end the following three lines should inserted in the $HOME/workspace/agent-infra/release file.
+            6. insert the "export HUMAN1_PERSONAL_ACCESS_TOKEN=a33d9663ceab39378746095a5919ff5c1d384044" line in the $HOME/workspace/rust-agent-infra/release 
+   9. In the end the following three lines should inserted in the $HOME/workspace/rust-agent-infra/release file.
 
    
 > export HUMAN1_PERSONAL_ACCESS_TOKEN=a33d9663ceab39378746095a5919ff5c1d384044
