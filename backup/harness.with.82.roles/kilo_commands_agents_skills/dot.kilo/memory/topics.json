@@ -1,0 +1,97 @@
+{
+ "groups": {
+  "dev": [
+   15,
+   16,
+   17,
+   18,
+   19,
+   20,
+   21,
+   22,
+   23,
+   71
+  ],
+  "reviewers": [
+   37,
+   32
+  ],
+  "code": [
+   6,
+   7,
+   8,
+   15,
+   16,
+   17,
+   18,
+   19,
+   20,
+   21,
+   22,
+   23,
+   32,
+   37,
+   38,
+   39,
+   40,
+   71
+  ]
+ },
+ "max_bytes": 3200,
+ "topics": [
+  {
+   "id": "ddd-clean-tdd",
+   "title": "Domain-driven design, clean code, test-driven development",
+   "roles": [
+    "code"
+   ],
+   "inline_in_agent": true,
+   "text": "domain-driven design (ubiquitous language, bounded contexts as crates, entities, value objects and aggregates, repository traits at the domain edge, IO-free domain, anti-corruption layers at integrations), clean code (small intention-revealing functions, single responsibility, no duplication or dead code, `Result` instead of `unwrap` in domain code), and test-driven development (write a failing test first, then the minimum code to pass, then refactor; no change without a test). Simplicity (ponytail) applies inside these rules, never against them."
+  },
+  {
+   "id": "rust-design-patterns",
+   "title": "Rust design patterns (summary of the book)",
+   "roles": [
+    "dev",
+    "reviewers"
+   ],
+   "rule": "Obey these patterns. Reviewers reject violations.",
+   "files": [
+    "summaries/rust_design_patterns.pdf.md"
+   ],
+   "max_bytes": 1200,
+   "produce": {
+    "type": "book-summary",
+    "source": "$RUST_DEV_ENV/books/rust_design_patterns.pdf",
+    "out": "summaries/rust_design_patterns.pdf.md",
+    "agent": "team-leader"
+   }
+  },
+  {
+   "id": "sdk-mistakes-principles",
+   "title": "SDK common mistakes and principles",
+   "roles": [
+    "dev",
+    "reviewers"
+   ],
+   "rule": "Avoid every listed mistake and follow the principles.",
+   "files": [
+    "$SDK_DEV_ENV/reference-projects/COMMON_MISTAKES.md",
+    "$SDK_DEV_ENV/reference-projects/PRINCIPLES.md"
+   ],
+   "max_bytes": 900
+  },
+  {
+   "id": "karpathy-guidelines",
+   "title": "Karpathy guidelines",
+   "roles": [
+    "code"
+   ],
+   "rule": "Follow these guidelines.",
+   "files": [
+    ".kilo/karpathy_skill.md"
+   ],
+   "max_bytes": 1100
+  }
+ ]
+}

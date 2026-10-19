@@ -1,0 +1,140 @@
+gitea-issue-management	ALL	140	Create, comment on, label, assign, link and close Gitea issues using the project label scheme (role:N, phas...
+role-handoff-protocol	ALL	128	Write a structured handoff comment (inputs consumed, artifacts produced, status, open questions, next role)...
+command-parsing-dispatch	2	120	Validate a command and its parameters against the schema, merge defaults, policy file and overrides, and re...
+epic-decomposition	2,5,7	107	Break an epic into child issues with owners, estimates, dependencies and acceptance criteria.
+approval-gate-management	1,2,80	116	Enforce review, QA, security, release and Product Owner gates before an issue can close or a PR can merge.
+escalation-handling	1,2	112	Summarize a blocker with options and a recommendation for the Product Owner, and track the decision.
+status-reporting	2,5,79	99	Aggregate progress, blockers, risks and milestone health into a short report.
+dependency-and-critical-path-planning	5,2,4	109	Model task dependencies, find the critical path, and flag schedule risk.
+risk-register-management	5,2,74	103	Identify, score, track and mitigate project risks.
+retrospective-and-process-metrics	79,2,5	108	Measure cycle time, lead time and rework, run retrospectives, and propose process changes.
+requirements-engineering	3,4,1	116	Elicit, structure and version requirements with unique IDs, priorities and traceability to design, tests an...
+acceptance-criteria-writing	3,38,40	97	Write testable acceptance criteria in Given/When/Then form.
+domain-model-recovery	3,7,29	116	Extract business rules, entities and processes from code, schemas and runtime behavior into a domain model.
+roadmap-prioritization	4,5,73	106	Prioritize features and shape the roadmap with a transparent scoring model tied to customer value and cost.
+feedback-synthesis	4,45,65,27	104	Combine tickets, surveys, interviews and usage data into themes that feed the roadmap.
+adr-authoring	6,7,8,35,58	113	Record each architecture decision with context, options, trade-offs and consequences, and check the reasoni...
+rust-crate-architecture	6,7,15	111	Design the workspace layout: crate boundaries, layering, visibility, feature flags and dependency direction.
+interface-and-api-design	7,8,17	112	Design stable interfaces and contracts (traits, REST via OpenAPI, gRPC via protobuf) with versioning rules.
+system-diagramming	6,8,9,7	104	Produce context, container, component and deployment diagrams as code.
+technology-selection	6,8,24,12	114	Compare technologies against weighted criteria and select with documented rationale (Rust crates, databases...
+solution-integration-design	8,17,25	112	Design how application, data, infrastructure and external systems fit together end to end.
+legacy-java-analysis	7,8,37,3,29	117	Inventory a Java code base: modules, dependencies, frameworks, JNI and native code, dead code, and hot spots.
+java-to-rust-mapping	7,15,17	121	Define idiomatic Rust equivalents for Java constructs (classes to structs and traits, exceptions to Result,...
+interop-bridge-design	7,15,17	113	Design and build temporary Java and Rust coexistence layers (HTTP, gRPC, JNI via jni-rs, or C ABI via cbind...
+strangler-migration-planning	5,7,8,2	114	Plan incremental migration: module ordering, feature flags, rollback points and cutover criteria.
+network-diagnostics	9,66,10	98	Diagnose DNS, routing, latency, bandwidth and connectivity problems.
+firewall-and-dns-configuration	9,31,33	99	Design and review firewall rules, DNS zones and segmentation.
+linux-administration	10,69,12	98	Configure and maintain OS services, users, permissions, storage and processes.
+systemd-service-management	10,13,14	104	Package and run Rust services under systemd with sandboxing, restarts and resource limits.
+cloud-infrastructure-as-code	11,33,12	114	Define cloud networks, compute, storage and managed services declaratively with policy checks.
+cloud-cost-allocation	11,73,72	99	Attribute cloud and compute costs to products and teams and find savings.
+platform-environment-templates	12,13,71	103	Provide reusable dev and CI environments, scaffolds and golden paths.
+ci-pipeline-authoring	13,12	102	Write and maintain Gitea Actions pipelines: build, test, lint, audit, release.
+container-image-build	13,10,12	103	Build small, reproducible, static Rust images with SBOMs and provenance.
+release-automation	80,13,82	100	Automate versioning, changelog, tagging, signing and artifact publishing.
+release-readiness-review	80,38,1	111	Check that tests, security, docs and approvals are complete before shipping, and define rollback.
+configuration-baseline-and-drift	82,13,10	116	Capture configuration baselines and detect drift between environments and versions.
+deployment-strategy	13,80,14	101	Run rolling, blue-green and canary deployments with automatic rollback on SLO breach.
+observability-instrumentation	14,17,41	106	Instrument services with logs, metrics and traces (tracing, OpenTelemetry) and build dashboards.
+slo-sli-management	14,4,5	89	Define SLIs and SLOs, error budgets and alerting policy.
+capacity-forecasting	14,41,73	97	Forecast resource needs and cost from load and growth data.
+incident-response	81,14,66	113	Coordinate detection, triage, mitigation, communication and recovery during production incidents.
+postmortem-authoring	81,14,2	101	Run a blameless review with timeline, causes and tracked action items.
+system-hardening	31,10,9	102	Harden operating systems and network services against known attack classes.
+rust-code-implementation	15,16,17,18,20	111	Implement features in idiomatic Rust: ownership, error handling with Result, traits, modules, tests and docs.
+async-service-development	17,18	112	Build async services with tokio, axum or tonic, including configuration, graceful shutdown and health endpo...
+database-access-and-migrations	17,29,18	101	Write typed database access (sqlx or diesel) and reversible schema migrations.
+authn-authz-implementation	17,31,18,32	106	Implement authentication and authorization (OIDC, JWT, RBAC) and test the permission matrix.
+web-frontend-wasm	16,18	107	Build web UIs in Rust (leptos or yew) compiled to WebAssembly with state management and API integration.
+desktop-app-packaging	20,16	106	Build and package native desktop apps (egui, iced, tauri) with OS integration and installers.
+mobile-rust-core	19	108	Share a Rust core with iOS and Android via uniffi or Tauri mobile and wrap it in native UI.
+embedded-no-std-development	21,56,57	108	Write no_std firmware (embassy, RTIC) with HAL crates, memory budgets and real-time constraints.
+hardware-in-the-loop-testing	21,39,56	95	Automate tests that run on real or emulated hardware.
+ml-pipeline-engineering	22,25	110	Build training, evaluation and inference pipelines in Rust (burn, candle, ONNX runtime).
+model-evaluation	22,24,26	99	Design evaluation methodology, metrics, baselines and error analysis.
+ai-feature-integration	23,22	108	Integrate LLM and inference features with prompts, tool calls, guardrails and evaluation sets.
+agent-tool-orchestration	23,71,2	102	Define agent tools, MCP servers and orchestration flows with permissions and limits.
+ml-research-experimentation	24,26	97	Plan experiments, track runs and compare results with scientific rigor.
+etl-pipeline-engineering	25,29	110	Build batch and streaming pipelines for extraction, transformation and loading with idempotency and retries.
+data-quality-management	25,28,29	99	Define and enforce data-quality rules: completeness, uniqueness, validity and freshness.
+database-performance-and-schema	29,17	104	Design schemas, indexes and queries and fix performance problems.
+backup-and-restore	29,14,10	95	Define backup policy and prove that restore works.
+data-migration-reconciliation	29,25,17	101	Migrate data between systems and prove that the target matches the source.
+statistical-analysis	26,27,4	107	Run hypothesis tests, A/B analysis and predictive models with clear assumptions and uncertainty.
+exploratory-analytics	27,30	88	Explore data and report product and business metrics.
+metric-modeling	28,30,27	106	Define canonical metrics and transformation models with tests and documentation.
+bi-dashboard-building	30,28,74	102	Build dashboards and executive reports with consistent definitions.
+code-review	37,32,7	109	Review PRs for correctness, architecture adherence, idiomatic Rust, maintainability and security.
+technical-debt-detection	37,7	107	Find duplication, complexity, dead code, TODOs and layering violations and rank them.
+test-strategy-planning	38,39	102	Plan test levels, coverage targets, environments and quality gates from requirements and risk.
+test-harness-and-fixtures	39,40,21	99	Build reusable harnesses, mocks, fakes, simulators and fixtures.
+test-execution	38,39,40,15	94	Run unit, integration and end-to-end suites and report results.
+coverage-analysis	38,39	94	Measure coverage and identify untested critical paths.
+property-and-fuzz-testing	39,32,49	99	Test invariants with proptest and find crashes with cargo-fuzz.
+characterization-testing	39,40,38	104	Record the legacy system's real behavior as golden tests before changing it.
+parity-and-shadow-diff	38,40,39	101	Compare legacy and new systems on the same inputs and classify differences.
+bug-reproduction	40,66,67	101	Turn a report into a minimal, reliable reproduction with logs and environment details.
+defect-triage	38,40,2	93	Classify, deduplicate, prioritize and route defects.
+performance-benchmarking	41,15	99	Benchmark, profile and compare performance with statistically sound methods.
+load-and-scalability-testing	41,14,11	102	Test behavior under load and at scale and find bottlenecks.
+memory-and-concurrency-verification	41,57,15,37	104	Verify memory safety and concurrency behavior (miri, loom, sanitizers, cache analysis).
+threat-modeling	31,35,32,6	106	Identify assets, trust boundaries, threats and mitigations (STRIDE, attack trees).
+supply-chain-audit	32,31,77	102	Audit dependencies for vulnerabilities, licenses and provenance.
+unsafe-code-audit	32,37	97	Review each unsafe block for soundness and justification.
+secrets-and-iam-management	33,31,13	104	Manage secrets, access policies, and least privilege in cloud and CI.
+security-monitoring-and-detection	34,36	100	Monitor logs and signals, detect threats and investigate anomalies.
+security-incident-response	36,34,81	106	Run security incident playbooks: containment, evidence, eradication and recovery.
+vulnerability-analysis-and-pen-testing	34,31	107	Find and validate vulnerabilities in services and infrastructure within agreed scope.
+security-architecture-review	35,31,6	107	Review trust boundaries, identity architecture and defense in depth.
+ux-flow-and-wireframing	42,44,45	98	Design user flows, information architecture and low-fidelity wireframes.
+design-system-management	43,44,16,20	98	Maintain visual language, components, typography and design tokens.
+usability-research	45,46,42	104	Plan and analyze interviews and usability studies and create personas and journeys.
+cognitive-heuristic-review	46,42,44	105	Review designs for cognitive load, human factors and usability heuristics.
+legacy-ux-audit	45,46,42,3	94	Map current journeys, pain points and task friction before a redesign.
+technical-documentation	47,48,15	99	Write and maintain architecture docs, guides and tutorials with rustdoc and mdBook.
+api-reference-generation	47,48,17	97	Generate and verify API references that match the code.
+release-notes-and-changelog	48,80,47	99	Write user-facing release notes and keep the changelog accurate.
+knowledge-base-sync	47,71,2	90	Keep the wiki, ADRs and docs aligned with merged work.
+mathematical-modeling-and-proofs	49,24	99	Build formal models and check derivations, proofs and complexity.
+numerical-convergence-analysis	49,50,24	105	Choose methods and demonstrate order of convergence, stability and error bounds.
+physics-model-specification	50,3,49	111	Write the governing equations, assumptions, units, boundary conditions and validity range of a model.
+units-and-dimension-checking	50,15,54	108	Prevent unit and dimension errors with typed units in code and checks on specs.
+simulation-validation	50,54,55,56,51,52	120	Compare simulation results against analytic cases, benchmarks or experimental data with defined metrics and...
+mechanical-and-structural-analysis	54,55	102	Check stress, loads, mechanisms, materials and structural models.
+circuit-and-signal-analysis	56,21,57	102	Analyze circuits, sensors and signal chains and define hardware and software interfaces.
+hardware-architecture-analysis	57,41,21	104	Analyze CPU, memory hierarchy, buses and peripherals to guide data layout and optimization.
+chemistry-model-validation	51,50	97	Validate chemical models, kinetics and material properties.
+biological-model-validation	52,24	98	Validate biological models and interpret biological data.
+clinical-safety-checking	53,78,31	108	Check medical terminology, safety thresholds and compliance with clinical guidelines.
+ethics-and-assumption-analysis	58,1,35	108	Examine assumptions, value conflicts and consistency of arguments behind decisions.
+product-positioning-and-messaging	59,4,61	103	Define positioning, segments, messaging and competitive framing.
+growth-experimentation	60,27,26	97	Design and measure acquisition, activation and retention experiments.
+technical-content-and-seo	61,48	95	Plan technical content and SEO and measure search visibility.
+sales-demo-and-poc	62,15,68	102	Prepare demos, proof-of-concepts and architecture proposals tied to customer needs.
+partnership-evaluation	63,77,4	97	Assess partnership and market opportunities, fit and risk.
+account-health-management	64,65	96	Track account health, renewals and expansion opportunities.
+customer-onboarding	65,68,48	100	Guide customers to adoption with checklists, configuration and training.
+support-ticket-triage	66,67,69	103	Classify and route support tickets, and escalate to engineering with full context.
+support-intake-and-faq	67,66	97	Handle first-line support, maintain FAQs, and communicate status to customers.
+customer-implementation	68,65	105	Configure, deploy and integrate the product for a specific customer.
+workstation-provisioning	69,70,10	102	Set up developer and staff machines with the toolchain and correct access.
+access-and-asset-management	70,69	102	Manage user access, hardware and software assets, and IT policy compliance.
+internal-tooling	71,13,12	99	Build and maintain internal tools, automation and productivity infrastructure.
+accounting-reconciliation	72,73	101	Reconcile transactions, maintain records and produce financial reports.
+financial-modeling	73,74,5	93	Build budgets, forecasts and cost analyses for decisions.
+budget-governance	74,5,1	94	Set financial controls, approvals and investment decisions.
+hiring-pipeline	75,76,2	95	Define role needs, sourcing, interview kits and hiring workflow.
+organizational-policy-and-performance	75,79	103	Maintain employee policies and performance processes and align operations.
+license-and-ip-review	77,32	102	Review software licenses, intellectual property and legal risk.
+contract-and-terms-review	77,63,64	102	Review contracts, terms and obligations that affect product or delivery.
+compliance-evidence-collection	78,77,31,47	102	Map controls to requirements and collect audit evidence.
+codebase-graph-build	7,8,12,13,47,71	207	Build or refresh the knowledge graph of the code base with graphify, so agents can query structure instead...
+codebase-graph-query	3,6,7,8,12,13,15,16,17,18,19,20,21,22,23,29,31,32,37,38,39,40,41,47,48,57,71	195	Answer structure questions (who calls what, where is X, what depends on Y) from the graphify graph before g...
+ponytail-ladder	7,15,16,17,18,19,20,21,22,23,71	254	Before writing new code, climb the simplest-solution ladder: skip it, std, platform feature, existing depen...
+ponytail-review	37,7,32	204	Review a change for over-engineering: needless dependencies, abstractions with one use, extra files and spe...
+rtk-token-saver	2,10,12,13,71	169	Install and verify RTK so shell output reaches the agent compressed (60 to 90 percent smaller on common com...
+memory-compression	2,47,48,71,79	200	Shrink memory and doc files in caveman style (drop filler and articles, keep facts, code, paths and numbers...
+token-tools-setup	10,12,13,71	161	Install and check the four token-saving tools for this project: rtk, graphify, caveman style and ponytail.
+engineering-standards	6,7,8,15,16,17,18,19,20,21,22,23,32,37,38,39,40,71	227	Apply and check the house rules before and after coding: domain-driven design, clean code, test-driven deve...
+book-summarization	2,47,48	191	Summarize a long PDF part by part into a markdown file with a quick reference on top; interrupted runs resu...

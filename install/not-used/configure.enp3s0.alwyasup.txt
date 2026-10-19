@@ -1,0 +1,20 @@
+root@uzgem:/etc/netplan# cat /etc/NetworkManager/NetworkManager.conf
+[main]
+plugins=ifupdown,keyfile
+ignore-carrier=enp3s0
+[ifupdown]
+managed=false
+
+[device]
+wifi.scan-rand-mac-address=no
+
+
+
+root@uzgem:/etc/netplan# systemctl restart NetworkManager
+
+root@uzgem:~# sudo nmcli connection up "Wired connection 1"
+root@uzgem:~# sudo nmcli connection modify "Wired connection 1" connection.autoconnect yes
+
+
+
+

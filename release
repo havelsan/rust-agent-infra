@@ -1,0 +1,52 @@
+#!/bin/bash
+
+export RUST_AGENT_INFRA_DIR=`cd \`dirname $( readlink -f $BASH_SOURCE ) \` && pwd`
+export PATH=$RUST_AGENT_INFRA_DIR/bin:$PATH
+
+export RUST_AGENT_INFRA_MODELS_DIR=$RUST_AGENT_INFRA_DIR/models
+
+#export RUST_AGENT_INFRA_MODEL="Qwen/Qwen2.5-Coder-1.5B-Instruct"
+#export RUST_AGENT_INFRA_MODEL_TOOL_CALL_PARSER="hermes"
+#export RUST_AGENT_INFRA_MODEL_REASONING_PARSER="auto"
+#export RUST_AGENT_INFRA_MODEL_TOKENIZER=""
+
+
+export RUST_AGENT_INFRA_MODEL="QuantTrio/Qwen3.5-4B-AWQ" 
+export RUST_AGENT_INFRA_MODEL_TOOL_CALL_PARSER="qwen3_coder"
+export RUST_AGENT_INFRA_MODEL_REASONING_PARSER="qwen3"
+
+
+export RUST_AGENT_INFRA_DEV_TOOLS=$RUST_AGENT_INFRA_DIR/dev-tools
+
+export RUST_AGENT_INFRA_LOG_DIR=$RUST_AGENT_INFRA_DIR/logs
+
+export RUST_AGENT_INFRA_DATA_DIR=$RUST_AGENT_INFRA_DIR/data
+
+
+alias dport='docker container ls --format "table {{.ID}}\t{{.Names}}\t{{.Ports}}" -a'
+
+#After installing and running the services ( install directory and services directory ),  
+#Get API KEY from the NewAPI admin web intraface (http://localhost:3000/keys) , click on the copy icon near the Api Key of API_KEY_0 line.
+#The api key below is the one i get from my local machine.
+export OPENAI_API_KEY="sk-EoJCdSt5ZfEzQqny7AlzEfeyNiwRpT96bgrWnwKWGCSNPOgQ"
+# Adress of the local newapi gateway
+export OPENAI_BASE_URL="http://localhost:3000/v1"  
+# The name "/local_model" is set in newapi
+export OPENAI_MODEL=/local_model
+
+
+export HUMAN1_PERSONAL_ACCESS_TOKEN=a33d9663ceab39378746095a5919ff5c1d384044
+export COORDINATOR1_PERSONAL_ACCESS_TOKEN=d8220143aa17a56e5811d61482a71bdd12791b94
+export WORKER1_PERSONAL_ACCESS_TOKEN=8bd5ca5990103e773e67d35c2b981e48bbbeb49b
+
+echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+echo ">>> RUST_AGENT_INFRA_DIR=$RUST_AGENT_INFRA_DIR "
+echo ">>> RUST_AGENT_INFRA_MODEL=$RUST_AGENT_INFRA_MODEL "
+echo ">>> RUST_AGENT_INFRA_DEV_TOOLS=$RUST_AGENT_INFRA_DEV_TOOLS "
+echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+if [ -f ~/sdk/rust-dev-env/release ]
+then
+. ~/sdk/rust-dev-env/release
+fi
+
+

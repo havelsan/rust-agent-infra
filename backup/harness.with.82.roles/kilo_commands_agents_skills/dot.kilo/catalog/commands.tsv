@@ -1,0 +1,104 @@
+init-project	Core	145	Cargo workspace, repo layout, CI skeleton, ADR folder, issue and label templates
+intake-requirement	Core	129	Requirement doc, acceptance criteria, traceability IDs (PO approval)
+plan-roadmap	Core	125	Roadmap, milestones, dependency map, risk register (PO approval)
+decompose-epic	Core	114	Child issues with owners, estimates, dependencies
+design-feature	Core	116	Design doc, ADR, threat-model notes
+implement-task	Core	122	Code, unit tests, PR
+review-pr	Core	112	Review verdict, blockers filed as issues
+test-cycle	Core	121	Test plan, automated suite, defect issues
+bugfix	Core	122	Reproduction, fix, regression test
+hotfix	Core	112	Patch release and rollback plan
+release	Core	141	Tagged release, changelog, signed artifacts (PO approval)
+spike	Core	108	Research note and recommendation
+refactor-debt	Core	137	Debt report, refactor PRs, behavior-unchanged proof
+status-report	Core	96	Progress, blockers, risks
+assess-legacy	Java→Rust	153	Inventory, dependency graph, debt, module classification (port/rewrite/retire)
+recover-domain	Java→Rust	118	Business rules, domain model, ER model (PO approval)
+capture-behavior	Java→Rust	133	Characterization tests against the running Java system
+ux-audit-legacy	Java→Rust	117	User journeys, pain points, cognitive-load findings
+redesign-ux	Java→Rust	133	New flows, design system, prototype spec (PO approval)
+design-target	Java→Rust	146	Rust target architecture, crate boundaries, ADRs (PO approval)
+plan-migration	Java→Rust	127	Module order, interop plan, feature-flag and rollback plan
+build-bridge	Java→Rust	126	Temporary interop layer so Java and Rust coexist
+port-module	Java→Rust	159	Idiomatic Rust module passing the characterization tests
+migrate-data	Java→Rust	130	Migration scripts, backfill, reconciliation report
+build-ui	Java→Rust	126	UI implemented against the new design system
+parity-test	Java→Rust	121	Old-versus-new diff report
+perf-compare	Java→Rust	121	Benchmark comparison, Java versus Rust
+security-hardening	Java→Rust	113	Hardening report and fix issues
+cutover-module	Java→Rust	127	Canary rollout, SLO watch, go/no-go (PO approval)
+decommission-legacy	Java→Rust	127	Retired Java service, archived data and docs
+train-and-document	Java→Rust	121	Migration guide, manuals, onboarding material
+define-physics-model	Physics	124	Model spec with equations, assumptions, units (PO approval)
+select-numerics	Physics	125	Method choice with stability and error analysis
+design-sim-architecture	Physics	138	Crate layout, data layout, parallelism and GPU strategy
+scaffold-workspace	Physics	128	Workspace with crate skeletons and a units layer
+implement-solver	Physics	137	Solver implementation with physics and math review
+verify-numerics	Physics	129	Convergence-order and conservation test suite
+validate-physics	Physics	135	Validation report (PO approval)
+ensure-determinism	Physics	131	Reproducibility tests and floating-point policy
+optimize-sim	Physics	119	Optimized code, benchmark gates
+build-viz	Physics	113	Scientist-oriented visualization UI
+build-io-pipeline	Physics	120	Scenario input and result output pipeline
+regression-baseline	Physics	129	Golden-result store with versioned reference data
+scale-test	Physics	108	Scaling curves and bottleneck report
+document-model	Physics	116	Theory manual, API docs, validation report, tutorials
+verify-structural-model	Physics	108	Structural model verification
+hardware-software-codesign	Physics	134	Hardware/software partition and interface spec
+threat-model	Quality / Security	122	Threat model and mitigation issues
+dependency-audit	Quality / Security	110	Vulnerability and license report
+unsafe-audit	Quality / Security	116	Soundness review of every unsafe block
+fuzz-campaign	Quality / Security	110	Fuzz targets, crash triage
+perf-regression	Quality / Security	112	Benchmarks in CI with threshold gates
+coverage-gap	Quality / Security	111	Coverage report and missing-test issues
+concurrency-review	Quality / Security	119	Race and deadlock review, loom tests
+pen-test	Quality / Security	109	Findings and fix plan
+setup-ci	Infra / Ops	102	Gitea Actions pipeline
+containerize	Infra / Ops	109	Minimal reproducible images
+provision-env	Infra / Ops	117	Environment defined as code
+deploy	Infra / Ops	107	Deployment with rollback path
+define-slo	Infra / Ops	110	SLIs, SLOs, dashboards, alerts
+incident	Infra / Ops	120	Triage, mitigation, communication
+postmortem	Infra / Ops	107	Review and action items with owners
+capacity-plan	Infra / Ops	105	Forecast and cost model
+db-change	Infra / Ops	122	Reviewed migration with backup and rollback
+env-drift-check	Infra / Ops	108	Drift report against the configuration baseline
+compliance-check	Business	117	Control mapping and audit evidence
+license-review	Business	100	License compatibility report
+launch-plan	Business	117	Positioning, messaging, launch checklist
+customer-demo	Business	120	Demo scenario, PoC, architecture proposal
+customer-onboarding	Business	118	Customer configuration and onboarding guide
+support-escalation	Business	121	Reproduction and bug issue with logs
+feedback-loop	Business	115	Insights feeding the next /plan-roadmap
+budget-review	Business	108	Cost versus plan and forecast
+hiring-plan	Business	104	Role needs and interview kits
+escalate	Meta	102	Blocked issue raised to the Product Owner with options
+arbitrate-design	Meta	111	Conflict resolved and recorded as an ADR
+knowledge-sync	Meta	106	Wiki and ADRs updated from merged PRs
+retro	Meta	96	Retrospective and process improvements
+agent-audit	Meta	105	Weak-output analysis and skill-file tuning proposals
+build-mobile-app	Mobile / Embedded	126	Shared Rust core with native UI shells
+build-firmware	Mobile / Embedded	136	no_std firmware with hardware-in-the-loop tests
+port-to-embedded	Mobile / Embedded	120	Library ported to a constrained device
+build-ml-pipeline	AI / ML	126	Training, evaluation, and inference pipeline
+add-ai-feature	AI / ML	131	AI feature with tool orchestration and prompt evaluation
+ai-safety-review	AI / ML	105	Safety review and mitigation issues
+analyze-experiment	Data / Analytics	112	Statistical analysis and recommendation
+define-metrics	Data / Analytics	118	Metric definitions and transformation models
+build-dashboard	Data / Analytics	113	Executive dashboards and reporting
+validate-bio-model	Domain science	109	Biological model validation report
+clinical-safety-review	Domain science	119	Clinical terminology and safety-threshold check
+evaluate-partnership	Business	125	Opportunity assessment with technical feasibility
+account-review	Business	116	Account health, renewal and expansion plan
+close-period	Business	112	Reconciliation, financial report, cost allocation
+onboard-employee-env	IT	118	Workstation setup, access, toolchain
+it-policy-review	IT	108	Policy, asset, and access review
+setup-token-tools	Token tools	125	Token-saving tools installed and verified (kctx doctor report)
+graph-build	Token tools	114	Code graph (graph.json, GRAPH_REPORT.md) and a short architecture note
+graph-ask	Token tools	93	Answer from the code graph with file references
+ponytail-review	Token tools	106	Over-engineering findings with simpler alternatives
+ponytail-audit	Token tools	123	Unused and duplicate dependencies, over-built code, removal plan
+compress-memory	Token tools	116	Compressed memory files with before and after token counts
+summarize-book	Standards	116	Part-by-part summary file with a quick reference (default summaries/<pdf name>.md)
+standards-review	Standards	125	DDD, clean-code, TDD and design-pattern findings with required fixes
+kctx	Core	66	Router: run a workflow with small-context staging

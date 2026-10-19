@@ -1,0 +1,24 @@
+{
+ "items": {
+  "agent:team-leader": {
+   "pinned": true,
+   "loaded_at": 0,
+   "last_used": 0
+  },
+  "skill:gitea-issue-management": {
+   "pinned": true,
+   "loaded_at": 0,
+   "last_used": 0
+  },
+  "skill:role-handoff-protocol": {
+   "pinned": true,
+   "loaded_at": 0,
+   "last_used": 0
+  },
+  "command:kctx": {
+   "pinned": true,
+   "loaded_at": 0,
+   "last_used": 0
+  }
+ }
+}

@@ -1,0 +1,16 @@
+#!/usr/bin/env python3
+# risk_log.py - `risk_log.py` appends and updates risks (probability, impact, owner, mitigation) in a versioned file and lists the top risks
+# STATUS: scaffold. Implement the logic, then remove the not_implemented result.
+import json, sys
+
+
+def main(argv):
+    dry = "--dry-run" in argv
+    args = [a for a in argv if a != "--dry-run"]
+    print(json.dumps({"script": "risk_log.py", "status": "not_implemented", "dry_run": dry, "args": args,
+                      "note": "scaffold - implement this script before relying on it"}))
+    return 3
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

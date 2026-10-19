@@ -1,0 +1,1368 @@
+#!/usr/bin/env python3
+# kctx - dynamic context manager for the .kilo agent pack (Python 3.9+, stdlib only)
+#
+# Memory levels
+#   L0 core      always loaded: .kilo/memory/L0-core.md + pinned core agent/skills/command
+#   L1 working   loaded definitions (agent + a few skills) for the CURRENT step only
+#   L2 task      per-epic rolling summary + latest hand-off (.kilo/memory/epics/<id>/)
+#   L3 project   indexed notes, decisions, epic digests (.kilo/memory/project/), recalled on demand
+#   L4 org       global conventions and lessons (~/.kilo/memory/org by default), recalled on demand
+import argparse, json, math, os, re, shlex, shutil, subprocess, sys, time
+from pathlib import Path
+
+
+def die(msg, code=2):
+    print(f"kctx: {msg}", file=sys.stderr)
+    sys.exit(code)
+
+
+def find_root():
+    env = os.environ.get("KCTX_ROOT")
+    if env:
+        return Path(env).resolve()
+    p = Path.cwd().resolve()
+    for d in [p, *p.parents]:
+        if (d / ".kilo").is_dir():
+            return d
+    die("no .kilo directory found (run from the project root or set KCTX_ROOT)")
+
+
+ROOT = find_root()
+K = ROOT / ".kilo"
+LIB, MEM, CAT = K / "library", K / "memory", K / "catalog"
+TYPES = {"agent": "agents", "command": "commands", "skill": "skills"}
+ALWAYS = {"gitea-issue-management", "role-handoff-protocol"}
+STOP = set("the and for with from that this into per are all any use using when then than have has not can will its their your our out but via in of to is a an on at by be or as it which what how".split())
+GLOBAL_FLAGS = {"--target", "--scope", "--depth", "--roles", "--gates", "--priority", "--milestone", "--input",
+                "--output", "--budget", "--parent", "--dry-run"}
+GLOBAL_PARAMS = ("[--target] [--scope module/crate/workspace/system] [--depth quick/standard/thorough] [--roles +N,-N] "
+                 "[--gates po,review,qa,security,none] [--priority p0..p3] [--milestone] [--input] [--output] "
+                 "[--budget] [--parent #issue] [--dry-run]")
+
+STYLE_DEFAULTS = {
+    "caveman": {
+        "lite": "Style (replies and hand-off only): no filler, pleasantries or restating the task. Short direct sentences. Files you write for humans stay normal prose.",
+        "full": "Style (replies and hand-off only): terse. Drop articles, filler, hedging and pleasantries; fragments are fine. Keep code, commands, paths, errors and numbers exact. Do not invent abbreviations. Files you write for humans stay normal prose.",
+        "ultra": "Style (replies and hand-off only): ultra terse. Fragments, arrows, no connectives. Keep names, code, commands, paths, errors, numbers exact. Write security warnings and confirmations of irreversible actions as full, clear sentences. Files you write for humans stay normal prose."},
+    "ponytail": {
+        "lite": "Ponytail: prefer std and dependencies already in Cargo.lock; no speculative abstractions; add a dependency only if nothing existing fits.",
+        "full": "Ponytail ladder, stop at the first yes: 1 needed at all? skip it. 2 std/core covers it? use it. 3 platform or framework feature covers it? use it. 4 dependency already in Cargo.lock covers it? use it. 5 one expression (iterator, `?`, derive)? write that. 6 else minimum custom code. Never skip correctness, security, input validation at trust boundaries, data-loss handling, accessibility. When rung 1-5 decides, add `// ponytail: <why>`.",
+        "ultra": "Ponytail ladder, stop at the first yes: needed? std? platform feature? existing dependency? one expression? else minimum code. No new crates, modules or files unless the task demands them. Never skip correctness, security, trust-boundary validation, data-loss handling, accessibility. Mark decisions `// ponytail: <why>`."},
+}
+
+
+def style_text(kind, mode):
+    if mode in (None, "", "off"):
+        return ""
+    over = jload(MEM / "style.json", {}) or {}
+    return over.get(kind, {}).get(mode) or STYLE_DEFAULTS[kind].get(mode, "")
+
+
+def tools_cfg():
+    return cfg().get("tools", {})
+
+
+def graph_file():
+    return ROOT / tools_cfg().get("graphify", {}).get("graph", "graphify-out/graph.json")
+
+
+def rtk_active():
+    mode = str(tools_cfg().get("rtk", "auto")).lower()
+    if mode in ("off", "0", "false") or not shutil.which("rtk"):
+        return False
+    return mode in ("on", "1", "true") or (MEM / "rtk.ok").exists()
+
+
+def rtk_block():
+    if not rtk_active():
+        return ""
+    return ("Shell: prefix commands with `rtk` to keep output small (`rtk git status`, `rtk ls`, `rtk grep`, `rtk find`, "
+            "`rtk cargo build|test|clippy`). Need raw output: `rtk proxy <cmd>`.")
+
+
+def graph_block(role):
+    if role not in cfg().get("roles", {}).get("code_readers", []) or not graph_file().exists():
+        return ""
+    rel = tools_cfg().get("graphify", {}).get("graph", "graphify-out/graph.json")
+    return (f'Code graph: before grepping or reading source files run `graphify query "<question>" --graph {rel} --budget 600`. '
+            "Read GRAPH_REPORT.md only for broad architecture questions.")
+
+
+def run_script(name, *args, timeout=900):
+    try:
+        p = subprocess.run(["bash", str(K / "skills" / "scripts" / name), *args], capture_output=True, text=True,
+                           timeout=timeout, cwd=ROOT)
+        return p.returncode, p.stdout.strip()
+    except Exception as e:
+        return 1, json.dumps({"status": "fail", "detail": str(e)})
+
+
+def graph_recall(query, max_bytes):
+    if not graph_file().exists() or not shutil.which("graphify"):
+        return ""
+    budget = max(100, max_bytes // 4)
+    try:
+        p = subprocess.run(["graphify", "query", query[:300], "--graph", str(graph_file()), "--budget", str(budget)],
+                           capture_output=True, text=True, timeout=45, cwd=ROOT)
+        return truncate_bytes(p.stdout.strip(), max_bytes) if p.returncode == 0 else ""
+    except Exception:
+        return ""
+
+
+# ---- memory compression (caveman style, local and deterministic; never touches code or identifiers)
+_DROP_LITE = {"just", "really", "very", "basically", "actually", "simply", "quite", "please", "kindly", "certainly", "obviously"}
+_ARTICLES = {"the", "a", "an"}
+_ULTRA = {"also", "moreover", "furthermore", "additionally"}
+_PHRASES = [(r"\bin order to\b", "to"), (r"\bI(?:'d| would) be happy to\b ?", ""), (r"\bfeel free to\b ?", ""),
+            (r"\bit is important to note that\b ?", ""), (r"\bplease note that\b ?", ""), (r"\bmake sure that\b", "ensure that"),
+            (r"\bmake sure to\b ?", ""), (r"\b(?:Sure|Certainly|Of course)[,!]\s*", "")]
+_PROTECT = re.compile(r"`[^`]*`|https?://\S+|\[[^\]]*\]\([^)]*\)|\S*[/\\]\S*|\w+(?:[._:-]\w+)+")
+
+
+def squeeze_line(line, mode):
+    drop = set(_DROP_LITE)
+    if mode in ("full", "ultra"):
+        drop |= _ARTICLES
+    if mode == "ultra":
+        drop |= _ULTRA
+    indent = re.match(r"\s*(?:[-*+]\s+|\d+[.)]\s+)?", line).group(0)
+    body = line[len(indent):]
+    held = []
+
+    def hold(m):
+        held.append(m.group(0))
+        return f"\x00{len(held) - 1}\x00"
+
+    t = _PROTECT.sub(hold, body)
+    for pat, sub in _PHRASES:
+        t = re.sub(pat, sub, t)
+    out = []
+    for piece in re.split(r"(\s+)", t):
+        m = re.fullmatch(r"([(\[\"']*)([A-Za-z]+)([)\]\"',.;:!?]*)", piece)
+        if m and m.group(2).lower() in drop:
+            trail = "".join(ch for ch in m.group(3) if ch in ".;:!?")
+            if trail and out:
+                out[-1] = out[-1].rstrip() + trail + (" " if out[-1].endswith(" ") else "")
+            continue
+        out.append(piece)
+    t = re.sub(r"[ \t]{2,}", " ", "".join(out)).strip()
+    t = re.sub(r"\x00(\d+)\x00", lambda m: held[int(m.group(1))], t)
+    return indent + t
+
+
+def squeeze_text(text, mode="full"):
+    lines, out, fence, front = text.split("\n"), [], False, False
+    for i, ln in enumerate(lines):
+        st = ln.strip()
+        if i == 0 and st == "---":
+            front = True
+            out.append(ln)
+            continue
+        if front:
+            out.append(ln)
+            front = st != "---"
+            continue
+        if st.startswith("```") or st.startswith("~~~"):
+            fence = not fence
+            out.append(ln)
+            continue
+        if fence or not st or st.startswith("#") or st.startswith("|") or st.startswith("<") or st.startswith(">"):
+            out.append(ln)
+            continue
+        out.append(squeeze_line(ln, mode))
+    return "\n".join(out)
+
+
+# ---- topics: things every role must pay attention to before starting (per-role groups, file digests, book summaries)
+def topics_cfg():
+    return jload(MEM / "topics.json", {"groups": {}, "topics": [], "max_bytes": 3200})
+
+
+def topic_roles(t, T):
+    out = set()
+    for g in t.get("roles", []):
+        out |= set(T["groups"].get(g, [])) if isinstance(g, str) else {g}
+    return out
+
+
+def resolve_path(p):
+    e = os.path.expanduser(os.path.expandvars(p))
+    return Path(e) if os.path.isabs(e) else ROOT / e
+
+
+def unresolved(p):
+    return "$" in os.path.expandvars(p)
+
+
+def digest_markdown(text, cap):
+    text = re.sub(r"\A---\n.*?\n---\n", "", text, flags=re.S).strip()
+    m = re.search(r"^## Quick reference[^\n]*\n.*?(?=^## |\Z)", text, re.S | re.M)
+    if m:
+        text = m.group(0).strip()
+    if len(text.encode()) <= cap:
+        return text
+    sq = squeeze_text(text, "full")
+    if len(sq.encode()) <= cap:
+        return sq
+    secs, cur = [], [None, []]
+    for ln in sq.split("\n"):
+        st = ln.strip()
+        if not st:
+            continue
+        if st.startswith("#"):
+            if cur[0] is not None or cur[1]:
+                secs.append(cur)
+            cur = [st, []]
+        else:
+            cur[1].append(st)
+    secs.append(cur)
+    budget = max(120, (cap - 45) // max(1, len(secs)))
+    out = []
+    for head_line, lines in secs:
+        used = 0
+        if head_line:
+            out.append(head_line)
+            used += len(head_line.encode()) + 1
+        for st in lines:
+            if st.startswith("**"):
+                piece = st[:170]
+            else:
+                m2 = re.match(r"((?:[-*+]|\d+[.)])\s+)?(.*)", st)
+                piece = ((m2.group(1) or "") + re.split(r"(?<=[.!?])\s", m2.group(2), maxsplit=1)[0])[:170]
+            n = len(piece.encode()) + 1
+            if used + n > budget:
+                break
+            out.append(piece)
+            used += n
+    res = truncate_bytes("\n".join(out), cap - 45)
+    return res + "\n(digest; read the full file for details)"
+
+
+def topics_text(role, scale=1.0):
+    T = topics_cfg()
+    parts, missing = [], []
+    for t in T["topics"]:
+        if role not in topic_roles(t, T) or t.get("inline_in_agent"):
+            continue
+        lines = []
+        for f in t.get("files", []):
+            rp = resolve_path(f)
+            if unresolved(f) or not rp.exists():
+                missing.append(f)
+                continue
+            cap = max(200, int(t.get("max_bytes", 900) * scale))
+            lines.append(f"[{rp.name}] " + digest_markdown(rp.read_text(encoding="utf-8", errors="replace"), cap))
+        if lines:
+            parts.append(f"### {t['title']}\n{t.get('rule', '')}\n" + "\n".join(lines))
+    if missing:
+        parts.append("Missing topic files (list them under Open: in your hand-off): " + ", ".join(missing))
+    text = "\n".join(parts)
+    limit = T.get("max_bytes", 3200)
+    if len(text.encode()) > limit and scale > 0.3:
+        return topics_text(role, scale * limit / len(text.encode()) * 0.92)
+    return truncate_bytes(text, limit)
+
+
+def topics_status():
+    T = topics_cfg()
+    rows = []
+    for t in T["topics"]:
+        roles = sorted(topic_roles(t, T))
+        info = []
+        for f in t.get("files", []):
+            rp = resolve_path(f)
+            info.append(f"{f}: " + ("env var unset" if unresolved(f) else (f"ok {rp.stat().st_size}B" if rp.exists() else "MISSING")))
+        pr = t.get("produce")
+        if pr:
+            src = pr["source"]
+            info.append("source " + ("env var unset" if unresolved(src) else ("found" if resolve_path(src).exists() else "NOT FOUND")))
+        if t.get("inline_in_agent"):
+            info.append("rules are inside the agent files")
+        rows.append((t["id"], roles, info))
+    return rows
+
+
+# ---- book summaries (PDF -> markdown, part by part, resumable)
+def pdf_pages(path):
+    if shutil.which("pdftotext"):
+        pr = subprocess.run(["pdftotext", "-layout", str(path), "-"], capture_output=True, text=True, timeout=600)
+        if pr.returncode == 0 and pr.stdout.strip():
+            pages = pr.stdout.split("\f")
+            if pages and not pages[-1].strip():
+                pages.pop()
+            return pages
+    try:
+        import pypdf
+        pages = [(pg.extract_text() or "") for pg in pypdf.PdfReader(str(path)).pages]
+        if any(x.strip() for x in pages):
+            return pages
+    except ImportError:
+        pass
+    die("cannot extract text from the PDF (scanned file, or no reader): install poppler-utils (pdftotext) or pip install pypdf")
+
+
+def chunk_pages(pages, limit):
+    parts, cur, start, size, last = [], [], 1, 0, 1
+    for idx, pg in enumerate(pages, 1):
+        t = pg.strip()
+        if not t:
+            continue
+        b = len(t.encode())
+        if cur and size + b > limit:
+            parts.append((start, last, "\n\n".join(cur)))
+            cur, size = [], 0
+        if not cur:
+            start = idx
+        cur.append(t)
+        size += b
+        last = idx
+    if cur:
+        parts.append((start, last, "\n\n".join(cur)))
+    out = []
+    for a, b, text in parts:
+        first = next((ln.strip() for ln in text.splitlines() if ln.strip()), "")
+        out.append((a, b, text, first[:60]))
+    return out
+
+
+def agent_session(agent, prompt, pf):
+    pf.parent.mkdir(parents=True, exist_ok=True)
+    pf.write_text(prompt, encoding="utf-8")
+    return run_agent(agent, prompt, pf)
+
+
+def summarize_book(src, out, agent="team-leader", part_bytes=None, force=False):
+    c = cfg()
+    part_bytes = part_bytes or c.get("topics", {}).get("part_bytes", 12000)
+    work = MEM / "books" / slugify(src.name)
+    if force and work.exists():
+        shutil.rmtree(work)
+    work.mkdir(parents=True, exist_ok=True)
+    pages = pdf_pages(src)
+    parts = chunk_pages(pages, part_bytes)
+    n = len(parts)
+    print(f"kctx: summarizing {src.name}: {len(pages)} pages in {n} parts (resumable, work files in {work.relative_to(ROOT)})", file=sys.stderr)
+    for i, (a, b, text, title) in enumerate(parts, 1):
+        sm = work / f"part-{i:02d}.md"
+        if sm.exists():
+            continue
+        prompt = (f"# BOOK PART {i}/{n}: {title} (pages {a}-{b} of {src.name})\n"
+                  "You are the Team Leader. Summarize this part for Rust developers who must obey it.\n"
+                  f"Write the summary to `{sm.relative_to(ROOT)}` (max 1200 bytes) in this form:\n"
+                  "### <short part title>\nPatterns and idioms: one line each: name - what it is - when to use - when NOT to use\n"
+                  "Anti-patterns: one line each\nRust notes: key rules and pitfalls\n"
+                  "If the part has no patterns (front matter, index), write one line saying so.\n"
+                  f"<<<PART\n{text}\nPART>>>\n")
+        rc, log = agent_session(agent, prompt, work / f"part-{i:02d}.prompt.md")
+        if rc != 0 or not sm.exists():
+            die(f"part {i}/{n} failed ({'agent error: ' + truncate_bytes(log.strip(), 200) if rc else 'no summary written'}); rerun kctx preflight to resume")
+        sm.write_text(truncate_bytes(sm.read_text(encoding="utf-8", errors="replace"), 1400), encoding="utf-8")
+    qr = work / "quickref.md"
+    if not qr.exists():
+        cap = max(200, 9000 // n)
+        digest = "\n\n".join(truncate_bytes((work / f"part-{i:02d}.md").read_text(encoding="utf-8"), cap) for i in range(1, n + 1))
+        prompt = (f"# BOOK QUICK REFERENCE ({src.name})\nYou are the Team Leader. From the part summaries below write a quick reference "
+                  "for developers and reviewers: the patterns to follow and the anti-patterns to avoid, as short imperative rules, grouped by topic. "
+                  f"Max 1800 bytes. Write the summary to `{qr.relative_to(ROOT)}`.\n<<<PARTS\n{digest}\nPARTS>>>\n")
+        rc, log = agent_session(agent, prompt, work / "quickref.prompt.md")
+        if rc != 0 or not qr.exists():
+            die("quick reference step failed; rerun kctx preflight to resume (part summaries are kept)")
+        qr.write_text(truncate_bytes(qr.read_text(encoding="utf-8", errors="replace"), 2000), encoding="utf-8")
+    body = [f"## Part {i} (pages {a}-{b})\n" + (work / f"part-{i:02d}.md").read_text(encoding="utf-8").strip()
+            for i, (a, b, _, _) in enumerate(parts, 1)]
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(f"# {src.name} - summary\nSource: {src}\nBuilt part by part by kctx ({n} parts, {len(pages)} pages).\n\n"
+                   f"## Quick reference (obey these)\n{qr.read_text(encoding='utf-8').strip()}\n\n" + "\n\n".join(body) + "\n", encoding="utf-8")
+    return out
+
+
+def ensure_topic_outputs(step_roles=None, force=False):
+    T, warns = topics_cfg(), []
+    for t in T["topics"]:
+        pr = t.get("produce")
+        if not pr or (step_roles is not None and not (set(step_roles) & topic_roles(t, T))):
+            continue
+        out = resolve_path(pr["out"])
+        if out.exists() and not force:
+            continue
+        if unresolved(pr["source"]):
+            warns.append(f"{t['id']}: {pr['source']} is not set in the environment, so {pr['out']} cannot be built")
+            continue
+        src = resolve_path(pr["source"])
+        if not src.exists():
+            warns.append(f"{t['id']}: source {src} not found, so {pr['out']} cannot be built")
+            continue
+        try:
+            summarize_book(src, out, pr.get("agent", "team-leader"), force=force)
+        except SystemExit:
+            warns.append(f"{t['id']}: summarizing {src.name} did not finish; rerun kctx preflight to resume")
+    return warns
+
+
+
+def tok(nbytes):
+    return (nbytes + 3) // 4
+
+
+def now():
+    return int(time.time())
+
+
+def jload(p, default=None):
+    try:
+        return json.loads(Path(p).read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return default
+
+
+def jsave(p, obj):
+    Path(p).parent.mkdir(parents=True, exist_ok=True)
+    Path(p).write_text(json.dumps(obj, indent=1, ensure_ascii=False), encoding="utf-8")
+
+
+def slugify(s):
+    return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-") or "note"
+
+
+def cfg():
+    c = jload(MEM / "budget.json")
+    if not c:
+        die("missing .kilo/memory/budget.json")
+    return c
+
+
+def budgets():
+    c = cfg()
+    usable = c["context_tokens"] - c["reserve_output_tokens"]
+    return {k: int(usable * v) for k, v in c["split"].items()}, c, usable
+
+
+def truncate_bytes(text, n):
+    b = text.encode("utf-8")
+    return text if len(b) <= n else b[:n].decode("utf-8", errors="ignore")
+
+
+# ------------------------------------------------------------------ L1: loaded definitions
+def reg():
+    return jload(MEM / "active.json", {"items": {}})
+
+
+def reg_save(r):
+    jsave(MEM / "active.json", r)
+
+
+def lib_path(t, name):
+    return LIB / TYPES[t] / (name if t == "skill" else name + ".md")
+
+
+def act_path(t, name):
+    return K / TYPES[t] / (name if t == "skill" else name + ".md")
+
+
+def size_of(t, name, base="lib"):
+    p = (lib_path if base == "lib" else act_path)(t, name)
+    f = p / "SKILL.md" if t == "skill" else p
+    return f.stat().st_size if f.exists() else 0
+
+
+def split_key(key):
+    t, n = key.split(":", 1)
+    return t, n
+
+
+def defs_used(r):
+    return sum(tok(size_of(*split_key(k), base="act")) for k, v in r["items"].items() if not v.get("pinned"))
+
+
+def unload_raw(r, key):
+    t, n = split_key(key)
+    p = act_path(t, n)
+    if t == "skill":
+        shutil.rmtree(p, ignore_errors=True)
+    elif p.exists():
+        p.unlink()
+    r["items"].pop(key, None)
+
+
+def load_item(t, name, pin=False):
+    if t not in TYPES:
+        die(f"type must be one of {', '.join(TYPES)}")
+    src = lib_path(t, name)
+    if not (src / "SKILL.md" if t == "skill" else src).exists():
+        die(f"{t} '{name}' is not in the library (try: kctx search \"{name}\")")
+    r, key = reg(), f"{t}:{name}"
+    b, c, _ = budgets()
+    lim = c["limits"]
+    if key in r["items"]:
+        r["items"][key]["last_used"] = now()
+        r["items"][key]["pinned"] = r["items"][key].get("pinned", False) or pin
+        reg_save(r)
+        return "already loaded"
+    need = tok(size_of(t, name))
+    maxn = {"skill": lim["max_active_skills"], "agent": lim["max_active_agents"], "command": lim["max_active_commands"]}[t]
+    evicted = []
+    while not pin:
+        n_type = sum(1 for k, v in r["items"].items() if k.startswith(t + ":") and not v.get("pinned"))
+        over_count = n_type >= maxn
+        over_tok = defs_used(r) + need > b["definitions"]
+        if not (over_count or over_tok):
+            break
+        pool = [(v["last_used"], k) for k, v in r["items"].items()
+                if not v.get("pinned") and (not over_count or k.startswith(t + ":"))]
+        if not pool:
+            die(f"cannot fit {key}: needs ~{need} tokens, definitions budget is {b['definitions']}")
+        victim = min(pool)[1]
+        unload_raw(r, victim)
+        evicted.append(victim)
+    dst = act_path(t, name)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    if t == "skill":
+        shutil.copytree(src, dst, dirs_exist_ok=True)
+    else:
+        shutil.copy2(src, dst)
+    r["items"][key] = {"pinned": pin, "loaded_at": now(), "last_used": now()}
+    reg_save(r)
+    return "loaded" + (f" (evicted {', '.join(evicted)})" if evicted else "")
+
+
+def unload_item(t, name, force=False):
+    r, key = reg(), f"{t}:{name}"
+    if key not in r["items"]:
+        return "not loaded"
+    if r["items"][key].get("pinned") and not force:
+        return "pinned (use --force)"
+    unload_raw(r, key)
+    reg_save(r)
+    return "unloaded"
+
+
+def unload_unpinned():
+    r = reg()
+    for key in [k for k, v in r["items"].items() if not v.get("pinned")]:
+        unload_raw(r, key)
+    reg_save(r)
+
+
+# ------------------------------------------------------------------ catalog + ranking
+def words(s):
+    out = []
+    for w in re.findall(r"[a-z0-9]+", s.lower()):
+        if len(w) < 2 or w in STOP:
+            continue
+        out.append(w[:-1] if len(w) > 3 and w.endswith("s") else w)
+    return out
+
+
+def bm25(query, docs, k1=1.5, b=0.75):
+    q, toks = set(words(query)), [words(d) for d in docs]
+    n = len(docs) or 1
+    avg = (sum(len(t) for t in toks) / n) or 1
+    df = {}
+    for t in toks:
+        for w in set(t):
+            df[w] = df.get(w, 0) + 1
+    scores = []
+    for t in toks:
+        s = 0.0
+        for w in q:
+            f = t.count(w)
+            if f:
+                idf = math.log(1 + (n - df[w] + 0.5) / (df[w] + 0.5))
+                s += idf * f * (k1 + 1) / (f + k1 * (1 - b + b * len(t) / avg))
+        scores.append(s)
+    return scores
+
+
+def read_catalog(t=None):
+    rows = []
+    for ty in ([t] if t else list(TYPES)):
+        p = CAT / f"{TYPES[ty]}.tsv"
+        if p.exists():
+            for line in p.read_text(encoding="utf-8").splitlines():
+                parts = line.split("\t")
+                if len(parts) >= 4:
+                    rows.append({"type": ty, "name": parts[0], "tag": parts[1], "tokens": parts[2], "desc": parts[3]})
+    return rows
+
+
+def fmt_row(r):
+    return f"{r['type']:<7} {r['name']:<44} {r['tokens']:>4}t  {r['desc'][:90]}"
+
+
+def graph():
+    g = jload(CAT / "graph.json")
+    if not g:
+        die("missing .kilo/catalog/graph.json")
+    return g
+
+
+# ------------------------------------------------------------------ L3/L4 recall, remember
+def level_dirs():
+    c = cfg()
+    return {2: MEM / "epics", 3: MEM / "project", 4: Path(os.path.expanduser(c.get("org_dir", str(MEM / "org"))))}
+
+
+def md_chunks(path, maxb=700):
+    text = path.read_text(encoding="utf-8", errors="replace")
+    text = re.sub(r"\A---\n.*?\n---\n", "", text, flags=re.S)
+    out, cur = [], ""
+    for para in re.split(r"\n\s*\n", text):
+        para = para.strip()
+        if not para:
+            continue
+        if cur and len((cur + "\n" + para).encode()) > maxb:
+            out.append(cur)
+            cur = para
+        else:
+            cur = (cur + "\n" + para).strip()
+        while len(cur.encode()) > maxb * 2:
+            out.append(cur[:maxb])
+            cur = cur[maxb:]
+    if cur:
+        out.append(cur)
+    return out
+
+
+def recall(query, levels=(3, 4), max_bytes=None):
+    c = cfg()
+    max_bytes = max_bytes or c["limits"]["recall_default_bytes"]
+    hook = os.environ.get("KCTX_RECALL_CMD")
+    if hook:
+        try:
+            p = subprocess.run(shlex.split(hook) + [query, str(max_bytes)], capture_output=True, text=True, timeout=60)
+            return truncate_bytes(p.stdout, max_bytes)
+        except Exception as e:
+            print(f"kctx: recall hook failed ({e}); using built-in search", file=sys.stderr)
+    items = []
+    for lv in levels:
+        dirs = [level_dirs()[lv]] + ([ROOT / x for x in c.get("recall_extra_dirs", [])] if lv == 3 else [])
+        for d in dirs:
+            if d.exists():
+                for p in sorted(d.glob("*/summary.md" if lv == 2 else "**/*.md")):
+                    for i, ch in enumerate(md_chunks(p)):
+                        items.append((lv, p, i, ch))
+        if lv == 3:
+            for f in c.get("recall_extra_files", []):
+                rp = resolve_path(f)
+                if not unresolved(f) and rp.is_file():
+                    for i, ch in enumerate(md_chunks(rp)):
+                        items.append((lv, rp, i, ch))
+    if not items:
+        return ""
+    scores = bm25(query, [x[3] for x in items])
+    out, used = [], 0
+    for s, (lv, p, i, ch) in sorted(zip(scores, items), key=lambda z: -z[0]):
+        if s <= 0:
+            break
+        try:
+            rel = str(p.relative_to(ROOT))
+        except ValueError:
+            rel = str(p)
+        line = f"[L{lv} {rel}#{i}] {ch}"
+        n = len(line.encode()) + 1
+        room = max_bytes - used
+        if n > room:
+            if room < 160:
+                continue
+            line = truncate_bytes(line, room - 1)
+            n = len(line.encode()) + 1
+        out.append(line)
+        used += n
+    return "\n".join(out)
+
+
+def write_mem(path, title, text, tags=""):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f"---\ntitle: {json.dumps(title)}\ntags: [{tags}]\nupdated: {time.strftime('%Y-%m-%d')}\n---\n{text.strip()}\n",
+                    encoding="utf-8")
+
+
+def remember(level, title, text, tags=""):
+    mx = cfg()["limits"]["remember_max_bytes"]
+    n = len(text.encode())
+    if n > mx:
+        die(f"note is {n} bytes, limit {mx}: summarize it first (keep facts and decisions, drop narrative)")
+    if level not in (3, 4):
+        die("level must be 3 (project) or 4 (org)")
+    p = level_dirs()[level] / (slugify(title) + ".md")
+    write_mem(p, title, text, tags)
+    return p
+
+
+# ------------------------------------------------------------------ plan / validation
+def pick_skills(role, cname, ci, args_text, k):
+    G = graph()
+    cands = [s for s in G["roles"][str(role)]["skills"] if s not in ALWAYS]
+    q = set(words(" ".join([cname.replace("-", " "), ci["output"], ci["params"], args_text])))
+    scored = []
+    for i, s in enumerate(cands):
+        sk = G["skills"][s]
+        sc = len(q & set(words(sk["desc"]))) + 2 * len(q & set(words(s.replace("-", " "))))
+        scored.append((-sc, i, s))
+    scored.sort()
+    picks = [s for sc, i, s in scored if sc < 0][:k]
+    if not picks and cands:
+        picks = [cands[0]]
+    return picks
+
+
+def extra_skills(role, cname):
+    c = cfg()
+    out = []
+    if role in c.get("roles", {}).get("code_readers", []) and graph_file().exists():
+        out.append("codebase-graph-query")
+    T = topics_cfg()
+    if role in set(T["groups"].get("dev", [])) | set(T["groups"].get("reviewers", [])):
+        out.append("engineering-standards")
+    if role == 37 and c.get("style", {}).get("ponytail", "off") != "off":
+        out.append("ponytail-review")
+    return out
+
+
+def build_plan(cname, args_text, prefer=()):
+    G = graph()
+    ci = G["commands"].get(cname)
+    if not ci:
+        die(f"unknown command '{cname}' (try: kctx search \"{cname}\" --type command)")
+    k = cfg()["limits"]["max_skills_per_step"]
+    steps = []
+    for i, alts in enumerate(ci["steps"], 1):
+        role = 2 if not alts else next((a for a in alts if a in prefer), alts[0])
+        r = G["roles"][str(role)]
+        picks = [] if role == 1 else pick_skills(role, cname, ci, args_text, k)
+        skills = [] if role == 1 else list(dict.fromkeys(extra_skills(role, cname) + picks))[: cfg()["limits"]["max_active_skills"]]
+        steps.append({"n": i, "role": role, "agent": r["slug"], "role_name": r["name"], "alts": alts, "skills": skills})
+    return ci, steps
+
+
+def parse_args_list(args):
+    pos, flags, i = [], {}, 0
+    while i < len(args):
+        a = args[i]
+        if a.startswith("--"):
+            if i + 1 < len(args) and not args[i + 1].startswith("--"):
+                flags[a] = args[i + 1]
+                i += 1
+            else:
+                flags[a] = True
+        else:
+            pos.append(a)
+        i += 1
+    return pos, flags
+
+
+def validate_args(ci, args):
+    sig = ci["params"]
+    rest = re.sub(r"\[[^\]]*\]", " ", sig).split()
+    req_pos, req_flags, i = 0, [], 0
+    while i < len(rest):
+        t = rest[i]
+        if t.startswith("--"):
+            req_flags.append(t)
+            if i + 1 < len(rest) and not rest[i + 1].startswith("--"):
+                i += 1
+        elif t.startswith("<"):
+            req_pos += 1
+        i += 1
+    pos, flags = parse_args_list(args)
+    problems = []
+    if len(pos) < req_pos:
+        problems.append(f"expected {req_pos} positional argument(s), got {len(pos)}")
+    problems += [f"missing required {f}" for f in req_flags if f not in flags]
+    warns = [f"unknown flag {f}" for f in flags if f not in GLOBAL_FLAGS and f not in sig]
+    return problems, warns
+
+
+# ------------------------------------------------------------------ epics (L2)
+def epics_dir():
+    return MEM / "epics"
+
+
+def next_epic_id():
+    ids = []
+    for base in (epics_dir(), epics_dir() / "_closed"):
+        if base.exists():
+            ids += [int(p.name[1:]) for p in base.iterdir() if re.fullmatch(r"E\d{4}", p.name)]
+    return f"E{(max(ids) + 1) if ids else 1:04d}"
+
+
+def epic_dir(eid):
+    for base in (epics_dir(), epics_dir() / "_closed"):
+        if (base / eid / "meta.json").exists():
+            return base / eid
+    die(f"epic {eid} not found")
+
+
+def parse_handoff(text):
+    m = re.search(r"^\s*Status:\s*([\w-]+)", text, re.M | re.I)
+    status = m.group(1).lower() if m else "unknown"
+    d = re.search(r"^\s*Done:\s*(.+)$", text, re.M | re.I)
+    if d:
+        one = d.group(1).strip()
+    else:
+        lines = [ln for ln in text.strip().splitlines() if ln.strip()]
+        one = lines[0].strip() if lines else ""
+    return status, one
+
+
+def build_summary(meta):
+    cap = cfg()["limits"]["summary_max_bytes"]
+    head = f"# Epic {meta['id']}: /{meta['command']} {meta['args']}\nStatus: {meta['status']} (step {meta['cursor']}/{len(meta['steps'])})\n"
+    recs = meta["records"]
+    lines = [f"- step {r['step']} {r['agent']}: {r['status']} - {r['one_line'][:110]}" for r in recs[:-1]]
+    last = ""
+    if recs:
+        r = recs[-1]
+        last = f"\n## Latest hand-off (step {r['step']}, {r['agent']})\n{r['text']}\n"
+
+    def assemble(ls, omitted):
+        om = f"(+{omitted} earlier steps omitted)\n" if omitted else ""
+        return head + "\n## Steps\n" + om + ("\n".join(ls) + "\n" if ls else "") + last
+
+    ls, om = lines[:], 0
+    text = assemble(ls, om)
+    while len(text.encode()) > cap and ls:
+        ls.pop(0)
+        om += 1
+        text = assemble(ls, om)
+    return truncate_bytes(text, cap)
+
+
+def save_meta(d, meta):
+    jsave(d / "meta.json", meta)
+    (d / "summary.md").write_text(build_summary(meta), encoding="utf-8")
+
+
+def gitea(*a):
+    if not all(os.environ.get(v) for v in ("GITEA_URL", "GITEA_TOKEN", "GITEA_REPO")):
+        return None
+    try:
+        p = subprocess.run(["bash", str(K / "skills/scripts/gitea_issue.sh"), *a], capture_output=True, text=True, timeout=60)
+        return json.loads(p.stdout) if p.returncode == 0 and p.stdout.strip() else None
+    except Exception:
+        return None
+
+
+def fit_prompt(parts, limit_bytes):
+    # parts: dict with head, core, summary, recall, tail ; shrink recall first, then summary
+    def render():
+        style = f"\n## Style and tools\n{parts['style']}\n" if parts.get("style") else ""
+        topics = f"\n## Before you start\n{parts['topics']}\n" if parts.get("topics") else ""
+        return (f"{parts['head']}{parts['core']}{style}{topics}\n## Epic memory (L2)\n{parts['summary']}\n"
+                f"## Recalled project/org memory (L3/L4) and code graph\n{parts['recall'] or '(nothing relevant found)'}\n{parts['tail']}")
+    text = render()
+    while len(text.encode()) > limit_bytes and parts["recall"]:
+        parts["recall"] = truncate_bytes(parts["recall"], len(parts["recall"].encode()) // 2) if len(parts["recall"]) > 80 else ""
+        text = render()
+    while len(text.encode()) > limit_bytes and len(parts["summary"].encode()) > 400:
+        parts["summary"] = truncate_bytes(parts["summary"], int(len(parts["summary"].encode()) * 0.75))
+        text = render()
+    return text
+
+
+def run_agent(agent, prompt, pf):
+    c = cfg()
+    tmpl = os.environ.get("KILO_RUN_CMD") or c["run"]["cmd"]
+    try:
+        if "{prompt_file}" in tmpl:
+            cmd = ["bash", "-c", tmpl.format(agent=agent, prompt_file=str(pf))]
+        else:
+            cmd = shlex.split(tmpl.format(agent=agent)) + [prompt]
+        p = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, timeout=c["run"].get("timeout_sec", 1800))
+        return p.returncode, p.stdout + p.stderr
+    except FileNotFoundError as e:
+        return 127, f"cannot start agent runner: {e}. Set run.cmd in budget.json or KILO_RUN_CMD."
+    except subprocess.TimeoutExpired:
+        return 124, "agent run timed out"
+
+
+def po_brief(meta, d, label):
+    p = d / f"po-brief-{label}.md"
+    p.write_text(f"# Decision needed from the Product Owner ({meta['id']}, /{meta['command']})\n\n{build_summary(meta)}\n\n"
+                 f"Reply in the Gitea issue, then run: kctx resume {meta['id']} --approve\n", encoding="utf-8")
+    return p
+
+
+def result_json(meta, d, extra=None):
+    out = {"epic": meta["id"], "command": meta["command"], "status": meta["status"],
+           "steps_done": f"{meta['cursor']}/{len(meta['steps'])}", "summary": str((d / "summary.md").relative_to(ROOT))}
+    if extra:
+        out.update(extra)
+    if meta.get("warnings"):
+        out["warnings"] = [truncate_bytes(w, 160) for w in meta["warnings"][:3]]
+    return out
+
+
+def step_style(role):
+    c = cfg()
+    st = c.get("style", {})
+    lines = [style_text("caveman", st.get("caveman")),
+             style_text("ponytail", st.get("ponytail")) if role in c.get("roles", {}).get("dev", []) else "",
+             rtk_block(), graph_block(role)]
+    return "\n".join(x for x in lines if x)
+
+
+def step_recall(query, role):
+    c = cfg()
+    text = recall(query, (3, 4))
+    if role in c.get("roles", {}).get("code_readers", []):
+        g = graph_recall(query, c["limits"].get("graph_default_bytes", 1200))
+        if g:
+            text = (text + "\n" if text else "") + "[code graph] " + g
+    return text
+
+
+def execute(meta, d):
+    b, c, _ = budgets()
+    lim = c["limits"]
+    steps = meta["steps"]
+    meta["status"] = "running"
+    gc = tools_cfg().get("graphify", {})
+    if meta["cursor"] == 0 and meta["command"] in gc.get("auto_build_for", []) and not graph_file().exists() and shutil.which("graphify"):
+        rc, out = run_script("graphify_build.sh", ".")
+        meta.setdefault("notes", []).append(f"graph auto-build rc={rc}")
+        save_meta(d, meta)
+    if meta["cursor"] == 0:
+        warns = ensure_topic_outputs({x["role"] for x in steps})
+        if warns:
+            meta.setdefault("warnings", []).extend(warns)
+            save_meta(d, meta)
+    while meta["cursor"] < len(steps):
+        st = steps[meta["cursor"]]
+        if st["role"] == 1:
+            meta["status"] = "awaiting-po"
+            meta["awaiting"] = {"type": "step", "step": st["n"]}
+            save_meta(d, meta)
+            return result_json(meta, d, {"brief": str(po_brief(meta, d, f"{st['n']:02d}").relative_to(ROOT))})
+        unload_unpinned()
+        load_item("agent", st["agent"])
+        for s in st["skills"]:
+            load_item("skill", s)
+        hpath = d / "handoffs" / f"{st['n']:02d}-{st['agent']}.md"
+        hpath.parent.mkdir(parents=True, exist_ok=True)
+        if hpath.exists():
+            hpath.unlink()
+        query = " ".join([meta["command"].replace("-", " "), meta["output"], st["role_name"], meta["args"]])
+        parts = {
+            "head": (f"# STEP {st['n']}/{len(steps)} of /{meta['command']} (epic {meta['id']})\n"
+                     f"You are `{st['agent']}` (role {st['role']}). Do only this step.\n"
+                     f"Command: /{meta['command']} {meta['args']}\nFinal output expected from the whole command: {meta['output']}\n"
+                     f"Skills loaded for this step: {', '.join(st['skills']) or 'none'} (in .kilo/skills/)\n\n"),
+            "core": (MEM / "L0-core.md").read_text(encoding="utf-8"),
+            "summary": build_summary(meta) if meta["records"] else "(first step)",
+            "recall": step_recall(query, st["role"]),
+            "style": step_style(st["role"]),
+            "topics": topics_text(st["role"]),
+            "tail": (f"## When finished\nWrite your hand-off to `{hpath.relative_to(ROOT)}` (max {lim['handoff_max_bytes']} bytes), exactly in this form:\n"
+                     "Status: done | blocked | needs-input | needs-review\nDone: <1-3 lines>\nArtifacts: <repo paths, comma-separated, or none>\n"
+                     "Open: <questions or none>\nNext: <what the next role must know>\n"),
+        }
+        limit = (b["core"] + b["task"] + b["recall"]) * 4
+        prompt = fit_prompt(parts, limit)
+        pf = d / "prompts" / f"{st['n']:02d}.md"
+        pf.parent.mkdir(parents=True, exist_ok=True)
+        pf.write_text(prompt, encoding="utf-8")
+        rc, log = run_agent(st["agent"], prompt, pf)
+        (d / "logs").mkdir(exist_ok=True)
+        (d / "logs" / f"{st['n']:02d}.log").write_text(log, encoding="utf-8")
+        unload_unpinned()
+        if rc != 0:
+            meta["status"] = "failed"
+            save_meta(d, meta)
+            return result_json(meta, d, {"error": truncate_bytes(log.strip(), 300)})
+        if not hpath.exists():
+            meta["status"] = "no-handoff"
+            save_meta(d, meta)
+            return result_json(meta, d, {"error": f"agent finished without writing {hpath.relative_to(ROOT)}"})
+        text = truncate_bytes(hpath.read_text(encoding="utf-8", errors="replace"), lim["handoff_max_bytes"])
+        hpath.write_text(text, encoding="utf-8")
+        status, one = parse_handoff(text)
+        meta["records"].append({"step": st["n"], "agent": st["agent"], "status": status, "one_line": one, "text": text,
+                                "handoff": str(hpath.relative_to(ROOT))})
+        meta["cursor"] += 1
+        save_meta(d, meta)
+        if meta.get("gitea_issue"):
+            gitea("comment", str(meta["gitea_issue"]), "--body", f"**Step {st['n']} {st['agent']}** - {text}")
+        if status in ("blocked", "needs-input"):
+            meta["status"] = status
+            save_meta(d, meta)
+            return result_json(meta, d)
+    if meta.get("po_gate"):
+        meta["status"] = "awaiting-po"
+        meta["awaiting"] = {"type": "final"}
+        save_meta(d, meta)
+        return result_json(meta, d, {"brief": str(po_brief(meta, d, "final").relative_to(ROOT))})
+    meta["status"] = "done"
+    meta.pop("awaiting", None)
+    save_meta(d, meta)
+    return result_json(meta, d)
+
+
+# ------------------------------------------------------------------ commands
+def cmd_status(a):
+    b, c, usable = budgets()
+    r = reg()
+    pinned = [(k, tok(size_of(*split_key(k), base="act"))) for k, v in r["items"].items() if v.get("pinned")]
+    loose = [(k, tok(size_of(*split_key(k), base="act"))) for k, v in r["items"].items() if not v.get("pinned")]
+    l0 = tok((MEM / "L0-core.md").stat().st_size) if (MEM / "L0-core.md").exists() else 0
+    core_used = l0 + sum(t for _, t in pinned)
+    epics = []
+    if epics_dir().exists():
+        for p in sorted(epics_dir().glob("E*/meta.json")):
+            m = jload(p)
+            epics.append((m["id"], m["status"], tok((p.parent / "summary.md").stat().st_size)))
+    print(f"context {c['context_tokens']} tokens, reserve {c['reserve_output_tokens']}, usable {usable} (1 token ~ 4 bytes)")
+    print(f"L0 core        {core_used:>5} / {b['core']:<5} tokens  (L0-core.md {l0}t + {len(pinned)} pinned items)")
+    print(f"L1 definitions {sum(t for _, t in loose):>5} / {b['definitions']:<5} tokens  ({len(loose)} loaded: "
+          + (", ".join(f"{k} {t}t" for k, t in loose) or "none") + ")")
+    print(f"L2 task        {sum(e[2] for e in epics):>5} / {b['task']:<5} tokens  ("
+          + (", ".join(f"{e[0]} {e[1]} {e[2]}t" for e in epics) or "no open epics") + ")")
+    print(f"L3/L4 recall   per-step cap {c['limits']['recall_default_bytes']} bytes (~{tok(c['limits']['recall_default_bytes'])}t) / {b['recall']} tokens")
+    print(f"working space  ~{b['working']} tokens (code, tool output, conversation)")
+    stl = c.get("style", {})
+    g = graph_file()
+    print(f"tools          rtk {'active' if rtk_active() else ('installed, not verified (run kctx doctor)' if shutil.which('rtk') else 'not installed')}; "
+          f"graphify {'graph ' + str(tok(g.stat().st_size)) + 't' if g.exists() else ('installed, no graph' if shutil.which('graphify') else 'not installed')}; "
+          f"caveman {stl.get('caveman', 'off')}; ponytail {stl.get('ponytail', 'off')}")
+    if shutil.which("rtk"):
+        try:
+            gain = subprocess.run(["rtk", "gain"], capture_output=True, text=True, timeout=5).stdout.strip().splitlines()[:3]
+            if gain:
+                print("rtk gain       " + " | ".join(x.strip() for x in gain))
+        except Exception:
+            pass
+
+
+def cmd_catalog(a):
+    rows = read_catalog(a.type)
+    if a.grep:
+        rows = [x for x in rows if a.grep.lower() in (x["name"] + " " + x["desc"] + " " + x["tag"]).lower()]
+    for x in rows[: a.n]:
+        print(fmt_row(x))
+    if len(rows) > a.n:
+        print(f"... {len(rows) - a.n} more (use --grep or -n)")
+
+
+def cmd_search(a):
+    rows = read_catalog(a.type)
+    scores = bm25(a.query, [x["name"].replace("-", " ") + " " + x["tag"] + " " + x["desc"] for x in rows])
+    shown = 0
+    for s, x in sorted(zip(scores, rows), key=lambda z: -z[0]):
+        if s <= 0 or shown >= a.n:
+            break
+        print(fmt_row(x))
+        shown += 1
+    if not shown:
+        print("no match")
+
+
+def cmd_load(a):
+    for n in a.names:
+        print(f"{a.type}:{n}: {load_item(a.type, n, pin=a.pin)}")
+
+
+def cmd_unload(a):
+    if a.all:
+        unload_unpinned()
+        print("unloaded all unpinned items")
+        return
+    for n in a.names:
+        print(f"{a.type}:{n}: {unload_item(a.type, n, a.force)}")
+
+
+def packs():
+    G = graph()
+    out = {}
+    for name, ci in G["commands"].items():
+        out.setdefault(slugify(ci["category"]), []).append(name)
+    return out
+
+
+def cmd_pack(a):
+    P = packs()
+    if a.action == "list":
+        for k, v in sorted(P.items()):
+            print(f"{k:<20} {len(v):>3} commands: {', '.join(v[:4])}{' ...' if len(v) > 4 else ''}")
+        return
+    if a.name not in P:
+        die(f"unknown pack '{a.name}' (see: kctx pack list)")
+    for n in P[a.name]:
+        print(f"command:{n}: " + (load_item("command", n) if a.action == "load" else unload_item("command", n)))
+
+
+def cmd_plan(a):
+    args = a.rest
+    text = " ".join(args)
+    prefer = [int(x) for x in a.prefer.split(",") if x.strip()] if a.prefer else []
+    ci, steps = build_plan(a.command, text, prefer)
+    problems, warns = validate_args(ci, args)
+    b, c, usable = budgets()
+    core = tok((MEM / "L0-core.md").stat().st_size)
+    print(f"/{a.command} {ci['params']}")
+    print(f"output: {ci['output']}" + ("  [PO approval gate at the end]" if ci["po_gate"] else ""))
+    for p in problems:
+        print(f"PROBLEM: {p}")
+    for w in warns:
+        print(f"warning: {w}")
+    peak = 0
+    for st in steps:
+        a_t = tok(size_of("agent", st["agent"])) if st["role"] != 1 else 0
+        s_t = sum(tok(size_of("skill", s)) for s in st["skills"])
+        total = (core + a_t + s_t + tok(c["limits"]["summary_max_bytes"]) + tok(c["limits"]["recall_default_bytes"])
+                 + tok(len(topics_text(st["role"]).encode())) + tok(len(step_style(st["role"]).encode())))
+        peak = max(peak, total)
+        who = f"{st['agent']} (role {st['role']})" + (" [human]" if st["role"] == 1 else "") + (f" alt={st['alts']}" if len(st["alts"]) > 1 else "")
+        print(f"  step {st['n']}: {who}  skills: {', '.join(st['skills']) or '-'}  ~{total} tokens of fixed context")
+    print(f"peak fixed context per step ~{peak} of {usable} usable tokens ({100 * peak // usable}%), leaving ~{usable - peak} for work")
+    return 1 if problems else 0
+
+
+def cmd_run(a):
+    args = a.rest
+    if a.command == "summarize-book" and not (a.dry_run or "--dry-run" in args):
+        pos, flags = parse_args_list(args)
+        if not pos:
+            die("usage: /summarize-book <pdf> [--out <file>] [--force]")
+        class _A: pass
+        x = _A(); x.pdf, x.out, x.force, x.part_bytes, x.agent = pos[0], flags.get("--out"), "--force" in flags, None, "team-leader"
+        return cmd_summarize(x)
+    if a.dry_run or "--dry-run" in args:
+        a.rest = [x for x in args if x != "--dry-run"]
+        sys.exit(cmd_plan(a))
+    prefer = [int(x) for x in a.prefer.split(",") if x.strip()] if a.prefer else []
+    ci, steps = build_plan(a.command, " ".join(args), prefer)
+    problems, warns = validate_args(ci, args)
+    if problems:
+        die("; ".join(problems) + f"\nusage: /{a.command} {ci['params']}")
+    for w in warns:
+        print(f"kctx: warning: {w}", file=sys.stderr)
+    eid = next_epic_id()
+    d = epics_dir() / eid
+    meta = {"id": eid, "command": a.command, "args": " ".join(args), "output": ci["output"], "po_gate": ci["po_gate"],
+            "status": "created", "cursor": 0, "steps": steps, "records": [], "created": now(), "gitea_issue": None}
+    gi = gitea("create", "--title", f"/{a.command} {' '.join(args)}"[:200], "--body",
+               f"epic: {eid}\ncommand: {a.command}\nargs: {' '.join(args)}\n", "--labels", f"epic,cmd:{a.command}")
+    if gi and gi.get("number"):
+        meta["gitea_issue"] = gi["number"]
+    d.mkdir(parents=True, exist_ok=True)
+    save_meta(d, meta)
+    print(json.dumps(execute(meta, d)))
+
+
+def cmd_resume(a):
+    d = epic_dir(a.epic)
+    meta = jload(d / "meta.json")
+    if meta["status"] == "done":
+        die("epic is already done")
+    aw = meta.get("awaiting")
+    if aw and not a.approve:
+        print(json.dumps(result_json(meta, d, {"note": "waiting for the Product Owner; run with --approve after the human decided"})))
+        return
+    if aw and a.approve:
+        if aw["type"] == "final":
+            meta["status"] = "done"
+            meta.pop("awaiting", None)
+            save_meta(d, meta)
+            print(json.dumps(result_json(meta, d)))
+            return
+        st = meta["steps"][meta["cursor"]]
+        meta["records"].append({"step": st["n"], "agent": "product-owner", "status": "approved", "one_line": "approved by the human Product Owner",
+                                "text": "Status: approved\nDone: approved by the human Product Owner", "handoff": ""})
+        meta["cursor"] += 1
+        meta.pop("awaiting", None)
+    print(json.dumps(execute(meta, d)))
+
+
+def cmd_epics(a):
+    for base in (epics_dir(), epics_dir() / "_closed"):
+        if base.exists():
+            for p in sorted(base.glob("E*/meta.json")):
+                m = jload(p)
+                print(f"{m['id']} {m['status']:<12} {m['cursor']}/{len(m['steps'])}  /{m['command']} {m['args']}"
+                      + ("  (closed)" if base.name == "_closed" else ""))
+
+
+def cmd_recall(a):
+    levels = tuple(int(x) for x in a.levels.split(","))
+    out = recall(a.query, levels, a.max_bytes)
+    if a.graph:
+        g = graph_recall(a.query, cfg()["limits"].get("graph_default_bytes", 1200))
+        if g:
+            out = (out + "\n" if out else "") + "[code graph] " + g
+    print(out or "(nothing relevant found)")
+
+
+def cmd_remember(a):
+    if a.text is not None:
+        text = a.text
+    elif a.from_file:
+        text = Path(a.from_file).read_text(encoding="utf-8")
+    else:
+        text = sys.stdin.read()
+    if a.compress:
+        text = squeeze_text(text, cfg().get("style", {}).get("caveman", "full") if cfg().get("style", {}).get("caveman") not in (None, "off") else "full")
+    p = remember(a.level, a.title, text, a.tags)
+    print(f"saved L{a.level}: {p}")
+
+
+def cmd_close(a):
+    d = epic_dir(a.epic)
+    meta = jload(d / "meta.json")
+    lim = cfg()["limits"]
+    arts = []
+    for r in meta["records"]:
+        m = re.search(r"^\s*Artifacts:\s*(.+)$", r["text"], re.M | re.I)
+        if m and m.group(1).strip().lower() != "none":
+            arts += [x.strip() for x in m.group(1).split(",") if x.strip()]
+    lines = [f"/{meta['command']} {meta['args']} finished with status {meta['status']}.", ""]
+    lines += [f"- {r['agent']}: {r['one_line'][:120]}" for r in meta["records"]]
+    if arts:
+        lines += ["", "Artifacts: " + ", ".join(dict.fromkeys(arts))]
+    text = truncate_bytes("\n".join(lines), lim["remember_max_bytes"])
+    write_mem(MEM / "project" / "epics" / f"{meta['id']}.md", f"Epic {meta['id']} /{meta['command']}", text, f"epic,{meta['command']}")
+    if d.parent.name != "_closed":
+        dest = epics_dir() / "_closed" / meta["id"]
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(d), str(dest))
+    print(f"closed {meta['id']}: digest saved to L3 (.kilo/memory/project/epics/{meta['id']}.md), working files archived")
+
+
+def cmd_graph(a):
+    if a.action == "status":
+        g = graph_file()
+        print(f"graphify: {'installed' if shutil.which('graphify') else 'not installed'}; graph: "
+              + (f"{g.relative_to(ROOT)} ({g.stat().st_size} bytes)" if g.exists() else "absent (run: kctx graph build)"))
+    elif a.action == "build":
+        rc, out = run_script("graphify_build.sh", *(a.args or ["."]))
+        print(out)
+        sys.exit(rc)
+    else:
+        if not a.args:
+            die("usage: kctx graph query \"<question>\"")
+        rc, out = run_script("graphify_query.sh", "--budget", str(tools_cfg().get("graphify", {}).get("query_budget_tokens", 600)), " ".join(a.args))
+        try:
+            print(json.loads(out).get("text", out))
+        except Exception:
+            print(out)
+
+
+def cmd_compress(a):
+    mode = a.mode or cfg().get("style", {}).get("caveman", "full")
+    mode = "full" if mode in (None, "off") else mode
+    target = Path(a.path)
+    files = [target] if target.is_file() else sorted(x for x in target.rglob("*.md") if not x.name.endswith(".orig"))
+    if not files:
+        die(f"no markdown files under {a.path}")
+    before = after = 0
+    for f in files:
+        text = f.read_text(encoding="utf-8")
+        new = squeeze_text(text, mode)
+        before += tok(len(text.encode()))
+        after += tok(len(new.encode()))
+        if not a.dry_run and new != text:
+            bak = f.with_name(f.name + ".orig")
+            if not a.no_backup and not bak.exists():
+                bak.write_text(text, encoding="utf-8")
+            f.write_text(new, encoding="utf-8")
+    print(json.dumps({"files": len(files), "mode": mode, "tokens_before": before, "tokens_after": after,
+                      "saved_pct": round(100 * (before - after) / before, 1) if before else 0, "dry_run": a.dry_run}))
+
+
+def cmd_doctor(a):
+    st = cfg().get("style", {})
+    rc, out = run_script("rtk_setup.sh")
+    try:
+        steps = {x["step"]: x for x in json.loads(out)["steps"]}
+    except Exception:
+        steps = {}
+    if shutil.which("rtk"):
+        v = steps.get("verify", {})
+        print(f"rtk       installed; exit codes: {v.get('result', 'unknown')} ({v.get('detail', '')[:90]}); scripts use rtk: {'yes' if (MEM / 'rtk.ok').exists() else 'no'}")
+    else:
+        print("rtk       NOT installed. Install: brew install rtk-ai/tap/rtk  or  cargo install --git https://github.com/rtk-ai/rtk, then rerun kctx doctor")
+    g = graph_file()
+    print(f"graphify  {'installed' if shutil.which('graphify') else 'NOT installed (uv tool install graphifyy)'}; graph: "
+          + (f"present ({g.stat().st_size} bytes)" if g.exists() else "absent (kctx graph build)"))
+    found = [x for x in ("~/.claude/skills/caveman", ".claude/skills/caveman", "~/.agents/skills/caveman", ".kilo/skills/caveman")
+             if (Path(os.path.expanduser(x)) if x.startswith("~") else ROOT / x).exists()]
+    print(f"caveman   style mode {st.get('caveman', 'off')} built into prompts; official skill: {', '.join(found) if found else 'not installed (not needed, it would add ~1-1.5k tokens per turn)'}")
+    for tid, roles, info in topics_status():
+        print(f"topic     {tid}: " + "; ".join(info))
+    print(f"ponytail  mode {st.get('ponytail', 'off')} built into prompts for dev roles {cfg().get('roles', {}).get('dev', [])}; reviewers get skill ponytail-review")
+
+
+def cmd_summarize(a):
+    src = resolve_path(a.pdf)
+    if unresolved(a.pdf) or not src.exists():
+        die(f"PDF not found: {a.pdf}" + (" (environment variable not set)" if unresolved(a.pdf) else ""))
+    out = resolve_path(a.out) if a.out else ROOT / "summaries" / (src.name + ".md")
+    if out.exists() and not a.force:
+        print(f"{out.relative_to(ROOT) if str(out).startswith(str(ROOT)) else out} already exists, skipping (use --force to rebuild)")
+        return
+    done = summarize_book(src, out, a.agent, a.part_bytes, a.force)
+    print(json.dumps({"summary": str(done), "bytes": done.stat().st_size}))
+
+
+def cmd_preflight(a):
+    warns = ensure_topic_outputs(None, a.force)
+    for w in warns:
+        print("warning:", w)
+    print("preflight done" if not warns else "preflight finished with warnings")
+    return 1 if warns else 0
+
+
+def cmd_topics(a):
+    for tid, roles, info in topics_status():
+        print(f"{tid}  roles: {','.join(map(str, roles))}")
+        for line in info:
+            print(f"    {line}")
+
+
+def cmd_init(a):
+    for t in TYPES.values():
+        (K / t).mkdir(parents=True, exist_ok=True)
+    for sub in ("epics", "project", "org"):
+        (MEM / sub).mkdir(parents=True, exist_ok=True)
+    unload_unpinned()
+    print("reset to core working set")
+
+
+def cmd_params(a):
+    print(GLOBAL_PARAMS)
+
+
+def main():
+    p = argparse.ArgumentParser(prog="kctx", description="Dynamic context manager for the .kilo agent pack")
+    sub = p.add_subparsers(dest="cmd", required=True)
+    sub.add_parser("status").set_defaults(f=cmd_status)
+    s = sub.add_parser("catalog"); s.add_argument("--type", choices=list(TYPES)); s.add_argument("--grep"); s.add_argument("-n", type=int, default=40); s.set_defaults(f=cmd_catalog)
+    s = sub.add_parser("search"); s.add_argument("query"); s.add_argument("--type", choices=list(TYPES)); s.add_argument("-n", type=int, default=8); s.set_defaults(f=cmd_search)
+    s = sub.add_parser("load"); s.add_argument("type", choices=list(TYPES)); s.add_argument("names", nargs="+"); s.add_argument("--pin", action="store_true"); s.set_defaults(f=cmd_load)
+    s = sub.add_parser("unload"); s.add_argument("type", nargs="?", choices=list(TYPES)); s.add_argument("names", nargs="*"); s.add_argument("--all", action="store_true"); s.add_argument("--force", action="store_true"); s.set_defaults(f=cmd_unload)
+    s = sub.add_parser("pack"); s.add_argument("action", choices=["list", "load", "unload"]); s.add_argument("name", nargs="?"); s.set_defaults(f=cmd_pack)
+    for nm, fn in (("plan", cmd_plan), ("run", cmd_run)):
+        s = sub.add_parser(nm); s.add_argument("--prefer", default=""); s.add_argument("--dry-run", action="store_true")
+        s.add_argument("command"); s.add_argument("rest", nargs=argparse.REMAINDER); s.set_defaults(f=fn)
+    s = sub.add_parser("resume"); s.add_argument("epic"); s.add_argument("--approve", action="store_true"); s.set_defaults(f=cmd_resume)
+    sub.add_parser("epics").set_defaults(f=cmd_epics)
+    s = sub.add_parser("recall"); s.add_argument("query"); s.add_argument("--levels", default="3,4"); s.add_argument("--max-bytes", type=int, default=None); s.add_argument("--graph", action="store_true"); s.set_defaults(f=cmd_recall)
+    s = sub.add_parser("remember"); s.add_argument("level", type=int); s.add_argument("title"); s.add_argument("--text"); s.add_argument("--from-file"); s.add_argument("--tags", default=""); s.add_argument("--compress", action="store_true"); s.set_defaults(f=cmd_remember)
+    s = sub.add_parser("close"); s.add_argument("epic"); s.set_defaults(f=cmd_close)
+    s = sub.add_parser("graph"); s.add_argument("action", choices=["build", "query", "status"]); s.add_argument("args", nargs=argparse.REMAINDER); s.set_defaults(f=cmd_graph)
+    s = sub.add_parser("compress"); s.add_argument("path"); s.add_argument("--mode", choices=["lite", "full", "ultra"]); s.add_argument("--dry-run", action="store_true"); s.add_argument("--no-backup", action="store_true"); s.set_defaults(f=cmd_compress)
+    sub.add_parser("doctor").set_defaults(f=cmd_doctor)
+    s = sub.add_parser("summarize"); s.add_argument("pdf"); s.add_argument("--out"); s.add_argument("--force", action="store_true"); s.add_argument("--part-bytes", type=int); s.add_argument("--agent", default="team-leader"); s.set_defaults(f=cmd_summarize)
+    s = sub.add_parser("preflight"); s.add_argument("--force", action="store_true"); s.set_defaults(f=cmd_preflight)
+    sub.add_parser("topics").set_defaults(f=cmd_topics)
+    sub.add_parser("init").set_defaults(f=cmd_init)
+    sub.add_parser("params").set_defaults(f=cmd_params)
+    a = p.parse_args()
+    if a.cmd == "pack" and a.action != "list" and not a.name:
+        die("pack name required")
+    if a.cmd == "unload" and not a.all and not (a.type and a.names):
+        die("usage: kctx unload <type> <name...> | kctx unload --all")
+    sys.exit(a.f(a) or 0)
+
+
+if __name__ == "__main__":
+    main()
