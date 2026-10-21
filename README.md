@@ -1,24 +1,24 @@
 # rust-agent-infra
 
-Agent-infra repository contains scripts, descriptions and example use cases of a local/offline/air-gapped agentic development environment.
+rust-agent-infra repository contains scripts, descriptions and example use cases of a local/offline/air-gapped agentic development environment.
 
 In this repository we describe: 
  
 1. Architecture Design Records about tool/service choices among other alternatives.
 2. How to trigger installation and services scripts.
-3. Simple usage example of each tool/service individually.
+3. Simple usage example of each tools/services individually.
 4. Usage of these tools/services in a full cycle development scenario.
 
 
 **CAUTION:**
-1. "Kilo Code" wtiher CLI or VSCode extension, should be run in a non-privileged account of operating system. In ubuntu 24.04, perform the installations which are described below,  and start the services using an account with a SUDO privileged account. After starting the services
-, you should switch to an account with no SUDO privilege while running "Kilo Code" executable or vs code extension.
+1. "Kilo Code" either CLI or VSCode extension, should be run in a non-privileged account of operating system. In ubuntu 24.04, perform the installations which are described below,  and start the services using an account with a SUDO privileged account. After starting the services, you should switch to an account with no SUDO privilege while running "Kilo Code" executable or vs code extension.
  
 2. If "Kilo Code" is using a system like issue tracker / DB / any type of server, the user account provided to "kilo code" agents should not have any admin privilege.
 
 **ATTENTION:** 
 1. After cloning this repository, source the release file found in the repository before running any script .
 2. "Start scripts" in services directory only triggers the existing container if it exists. If you change anything in the script, you should remove the container. ( E.g :  sudo docker rm -f VLLM_0; cd services;./01.vllm.sh)
+3. These scripts ( e.g. 04.new_api.sh ) also have descriptions in them like creating account and creating an API_KEY, please read them also.
 
 
 | Component | Type | Description |

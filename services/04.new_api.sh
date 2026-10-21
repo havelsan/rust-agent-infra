@@ -85,7 +85,7 @@ Click on the "Channels" link found on the left menu.
 
 Click on the "Create Channel" button
     Type = "OpenAI"
-    Name = "Qwen2.5-Coder-1.5B-Instruct"
+    Name = "Qwen3.5-4B-AWQ"
     Base URL = "http://host.docker.internal:8000"
     API Key = "NONE"
     Models = "/local_model"
