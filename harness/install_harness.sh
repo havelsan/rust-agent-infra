@@ -1,12 +1,7 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # install.sh [--link] [--force] [RUST_AGENT_INFRA_DIR]
 # Install the skills into $RUST_AGENT_INFRA_DIR/harness. Existing skills are kept unless --force.
 set -euo pipefail
-
-
-
-
-
 
 if [ "$RUST_AGENT_INFRA_DIR" = "" ]
 then
@@ -14,17 +9,65 @@ then
         exit 1
 fi
 
+if [ $# -lt 2 ]
+then
+       echo "Usage: $0 <project_agent_workspace_dir>"
+       echo "Example: $0 $HOME/agent-workspace/X-project"
+       echo "Example: $0 ."
+       exit 1
+fi
+ 
+WORKSPACE=$(realpath $1)
+
+if [ "$WORKSPACE" = "$RUST_AGENT_INFRA_DIR/harness" -o "$WORKSPACE" = "$RUST_AGENT_INFRA_DIR" ]
+then
+	echo "Go to the project's workspace please ..."
+	exit 1
+fi
+
+cd $WORKSPACE
+
 echo "Applying $RUST_AGENT_INFRA_DIR/harness to this directory ..."
 
-CURRENT_DIR=$(pwd)
+echo "You are in $WORKSPACE, we will create two sub directories for coordinator and for worker, then decorate the .kilo directories and start a kilo agent for coordinator and worker "
 
-echo "You are in $CURRENT_DIR, we will create two sub directories for coordinator and for worker, then decorate the .kilo directories and start the kilo agent"
+create_agent_workspaces (){
+    
+    agent_type=$1
+    mkdir -p $agent_type-workspace/.kilo/agents
+    mkdir -p $agent_type-workspace/.kilo/skills
+    
+    GITEA_ACCESS_TOKEN=$COORDINATOR1_PERSONAL_ACCESS_TOKEN
+    
+    if [ $agent_type = "worker" ]
+    then
+        GITEA_ACCESS_TOKEN=$WORKER1_PERSONAL_ACCESS_TOKEN
+    fi
+     
+    echo "
+      export GITEA_OWNER=rust-agentic-org
+      export GITEA_REPO=project-01 
+      export HUMAN_USER=human1 
+      export COORDINATOR_USER=coordinator1 
+      export WORKER_USER=worker1
+      export MEM_CONTEXT_TOKENS=32000   # per agent workspace
+      export GITEA_ACCESS_TOKEN='$GITEA_ACCESS_TOKEN'   # in the coordinator process
+      export MEM_DIR='$WORKSPACE//$agent_type-workspace/.mem'
 
-mkdir -p coordinator-workspace/.kilo/agents
-mkdir -p coordinator-workspace/.kilo/skills
+      caveman run -- kilo
+    " > $agent_type-workspace/start_agent.sh
+    
+     chmod +x $agent_type-workspace/start_agent.sh
 
-mkdir -p worker-workspace/.kilo/agents
-mkdir -p worker-workspace/.kilo/skills
+
+}
+
+create_agent_workspaces coordinator
+create_agent_workspaces worker
+
+
+
+
 
 
 for dir in modes-agents workflows-commands skills-skills

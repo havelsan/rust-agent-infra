@@ -37,6 +37,7 @@ L0 context: current step. L1 `.mem/<n>/`: plan, notes. L2 checkpoint comment on 
 - Report only what you checked. Commit with the issue number. Long results go to the wiki.
 - Rust only. No `unwrap`, `expect`, `panic!`, `unsafe` in library code. Crates need 10000+ downloads. Read `$RUST_DEV_ENV/reference-projects/PRINCIPLES.md` and `COMMON_MISTAKES.md` in slices.
 - Never contact the Human. Never change the version, other agents' issues, or put secrets in text.
+- Write "what did you decide that i did not tell you to decide" into the comment of the gitea issue or wiki of the project.
 
 ## Skills (`.kilo/skills`)
 Base: gitea-issues, gitea-wiki, issue-comment-protocol, gitea-assignment-handoff, agent-memory, step-protocol, lean-shell, graph-memory, terse-mode, minimal-build.

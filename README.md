@@ -449,7 +449,8 @@ Location: `$RUST_AGENT_INFRA_DIR/harness/library/skills/`
 I entered the following prompts in the claude.ai web prompt to improve the md files :
 
 1. as i only have 32kb context size, i need to implement agents.md files, skills that will use different levels of agentic memories, and try to split every step of the work into smaller parts if it can not finish in the first attempt. splitting would be like  ( think, plan, execute small pieces step by step) 
-2. also can you make use of rtk, caveman , graphify , ponytail in your md files and scripts, and reprepare the zip file?
+2. also can you make use of rtk, caveman , graphify , ponytail in your md files and scripts, and reprepare the harness as zip file?
+3. cut the skills in https://github.com/leonardomso/rust-skills into smaller skills so that i can load them, and execute them one by one , my maximum context size is 32k
 
 Claude.ai gave the following response with the corrected scripts zip file :
 The zip now has 35 skills, all validated. AGENTS.md is about 800–900 tokens, each skill is 350–700 tokens, and all skill descriptions together are about 1.5K tokens.
@@ -479,7 +480,37 @@ clear_worker.sh should not delete .mem/ for an issue that is still in progress. 
 Install caveman and ponytail by copying their skills into .kilo/skills/.
 Run graphify once with /graphify . before the first graph.sh build.
 
+3. rust-skills split
 
+I split the repo into 44 small skills plus a router, packed in rust-skills-split.zip. The whole thing is about 270k tokens, so the cut is much finer than one skill per category. Each module is about 3.5–7.5k tokens by a rough chars/3.3 estimate; I couldn't count with a real tokenizer here. One module plus the router and some code to review fits comfortably in 32k.
+
+How I cut it
+
+Router: rust-00-router is the only skill to load first, at about 1.4k tokens. It has the one-at-a-time runbook, which modules suit which task, and a table of all modules with their sizes.
+Modules: rust-01-… to rust-44-… follow the upstream priority order, from Ownership, Errors, Memory and Unsafe down to Linting and Anti-patterns. Big categories are split into parts, for example Async into 4 parts and Memory, API Design and Testing into 3 each. Small ones are combined, such as Conversions with Const.
+Rule text: The rule text is verbatim. Each module has a rule list at the top, then every rule's Why, Bad and Good sections.
+See Also links: I replaced the links with a plain Related: rule-ids line, because the per-rule files they pointed to no longer exist as separate files.
+Checks: All 265 rules appear exactly once. The largest module is 24.9 KB.
+Extra files: The zip also includes the upstream MIT LICENSE and a manifest.json with per-module sizes.
+
+How to run them one by one
+
+Load the router and pick modules for your task. Ownership and Errors are first for any Rust code.
+Load one module, check your code against it, and write down short findings as rule-id | location | fix.
+Drop the module and keep only the findings list.
+Load the next module and repeat. At the end, merge the findings and apply the fixes.
+
+Keep the code you review to roughly 10k tokens per pass, so a large file should be reviewed function by function.
+
+The split inside a category follows the upstream index order, which is mostly thematic, so some parts group related rules better than others. If you want tighter themes, for example Async split into channels, cancellation and core, or smaller modules around 4k tokens, I can regenerate it.
+
+
+
+#### Manual Modifications
+
+1. I inserted the following rule into the AGENTS.md files
+   - Write "what did you decide that i did not tell you to decide" into the comment of the gitea issue or wiki of the project.
+ 
 ## Example usage of this harness to develop a tetris game development in Rust on Linux Gnome.
 
 
