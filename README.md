@@ -444,7 +444,7 @@ Location: `$RUST_AGENT_INFRA_DIR/harness/library/skills/`
 | Qa | (Worker set) | R-16, R-17 |
 
 
-#### Improve the skills and agents in the harness 
+#### How we improved the skills and agents in the harness 
 
 I entered the following prompts in the claude.ai web prompt to improve the md files :
 
@@ -453,56 +453,48 @@ I entered the following prompts in the claude.ai web prompt to improve the md fi
 3. cut the skills in https://github.com/leonardomso/rust-skills into smaller skills so that i can load them, and execute them one by one , my maximum context size is 32k
 
 Claude.ai gave the following response with the corrected scripts zip file :
-The zip now has 35 skills, all validated. AGENTS.md is about 800–900 tokens, each skill is 350–700 tokens, and all skill descriptions together are about 1.5K tokens.
-I assumed "32kb" means a 32K-token window. If it is really 32 KB (about 8K tokens), set MEM_CONTEXT_TOKENS=8000 and link only the skills each role needs.
-1. Small context
-Layered memory. The new agent-memory skill and its mem.py script keep only the current step in context. Plan, step results and notes live in .mem/<issue>/, which survives /reset. A checkpoint comment on the Gitea issue lets a lost workspace or another agent resume. The wiki and a graphify graph hold project knowledge, and roles and principles are read in slices.
-Think, plan, execute. The new step-protocol skill plans at most 8 steps, about 4K tokens of work each. A step that fails twice, touches more than 3 files, or prints more than 150 lines is split into 2–4 smaller steps. Missing information makes the issue blocked. Both AGENTS.md files tell the agent to checkpoint every 3 steps, at 60% context after the step, and at 75% to checkpoint, /reset, then resume. The heavy role skills each have a "Steps" section with their own split points.
-Bounded output. get --brief shows the body plus the last 5 comments. The wiki is read in 6000-character parts, and role files, scanners and status reports are capped.
 
-2. The four tools
-All four are optional, and every script falls back to plain behaviour without them.
-Tool	Used in
-rtk	rt.sh, which cargo and git go through, including the gate and packaging scripts
-graphify	graph.sh, used before reading code
-caveman	terse-mode for notes and agent comments, with short rules inline in AGENTS.md; Human-facing text, requirements, code and commits stay normal
-ponytail	minimal-build, a ladder plus a 150-added-lines-per-step check
-I looked up each tool's documentation for the commands. The README has the install lines, and check_tools.sh shows which are installed.
+>**1. Small context**
+>The zip now has 35 skills, all validated. AGENTS.md is about 800–900 tokens, each skill is 350–700 tokens, and all skill descriptions together are about 1.5K tokens.
+>I assumed "32kb" means a 32K-token window. If it is really 32 KB (about 8K tokens), set MEM_CONTEXT_TOKENS=8000 and link only the skills each role needs.
+>Layered memory. The new agent-memory skill and its mem.py script keep only the current step in context. Plan, step results and notes live in .mem/<issue>/, which survives /reset. A checkpoint comment on >the Gitea issue lets a lost workspace or another agent resume. The wiki and a graphify graph hold project knowledge, and roles and principles are read in slices.
+>Think, plan, execute. The new step-protocol skill plans at most 8 steps, about 4K tokens of work each. A step that fails twice, touches more than 3 files, or prints more than 150 lines is split into 2–4 >smaller steps. Missing information makes the issue blocked. Both AGENTS.md files tell the agent to checkpoint every 3 steps, at 60% context after the step, and at 75% to checkpoint, /reset, then resume. >The heavy role skills each have a "Steps" section with their own split points.
+>Bounded output. get --brief shows the body plus the last 5 comments. The wiki is read in 6000-character parts, and role files, scanners and status reports are capped.
 
-Testing
-mem.py, including checkpoint and restore in a fresh workspace, the Gitea scripts and the capped outputs were tested against a mock Gitea.
-rtk, graphify, caveman and ponytail were not installed here, so only the fallback paths ran.
-The rtk and graphify command forms come from their documentation.
-Cargo is not installed here, so the cargo-based scripts are still untested.
+>**2. The four tools**
+>All four are optional, and every script falls back to plain behaviour without them.
+>Tool	Used in
+>rtk	rt.sh, which cargo and git go through, including the gate and packaging scripts
+>graphify	graph.sh, used before reading code
+>caveman	terse-mode for notes and agent comments, with short rules inline in AGENTS.md; Human-facing text, requirements, code and commits stay normal
+>ponytail	minimal-build, a ladder plus a 150-added-lines-per-step check
+>I looked up each tool's documentation for the commands. The README has the install lines, and check_tools.sh shows which are installed.
+>Testing
+>mem.py, including checkpoint and restore in a fresh workspace, the Gitea scripts and the capped outputs were tested against a mock Gitea.
+>rtk, graphify, caveman and ponytail were not installed here, so only the fallback paths ran.
+>The rtk and graphify command forms come from their documentation.
+>Cargo is not installed here, so the cargo-based scripts are still untested.
+>For your setup
+>clear_worker.sh should not delete .mem/ for an issue that is still in progress. If it does, mem.py start restores from the last checkpoint.
+>Install caveman and ponytail by copying their skills into .kilo/skills/.
+>Run graphify once with /graphify . before the first graph.sh build.
 
-For your setup
-clear_worker.sh should not delete .mem/ for an issue that is still in progress. If it does, mem.py start restores from the last checkpoint.
-Install caveman and ponytail by copying their skills into .kilo/skills/.
-Run graphify once with /graphify . before the first graph.sh build.
-
-3. rust-skills split
-
-I split the repo into 44 small skills plus a router, packed in rust-skills-split.zip. The whole thing is about 270k tokens, so the cut is much finer than one skill per category. Each module is about 3.5–7.5k tokens by a rough chars/3.3 estimate; I couldn't count with a real tokenizer here. One module plus the router and some code to review fits comfortably in 32k.
-
-How I cut it
-
-Router: rust-00-router is the only skill to load first, at about 1.4k tokens. It has the one-at-a-time runbook, which modules suit which task, and a table of all modules with their sizes.
-Modules: rust-01-… to rust-44-… follow the upstream priority order, from Ownership, Errors, Memory and Unsafe down to Linting and Anti-patterns. Big categories are split into parts, for example Async into 4 parts and Memory, API Design and Testing into 3 each. Small ones are combined, such as Conversions with Const.
-Rule text: The rule text is verbatim. Each module has a rule list at the top, then every rule's Why, Bad and Good sections.
-See Also links: I replaced the links with a plain Related: rule-ids line, because the per-rule files they pointed to no longer exist as separate files.
-Checks: All 265 rules appear exactly once. The largest module is 24.9 KB.
-Extra files: The zip also includes the upstream MIT LICENSE and a manifest.json with per-module sizes.
-
-How to run them one by one
-
-Load the router and pick modules for your task. Ownership and Errors are first for any Rust code.
-Load one module, check your code against it, and write down short findings as rule-id | location | fix.
-Drop the module and keep only the findings list.
-Load the next module and repeat. At the end, merge the findings and apply the fixes.
-
-Keep the code you review to roughly 10k tokens per pass, so a large file should be reviewed function by function.
-
-The split inside a category follows the upstream index order, which is mostly thematic, so some parts group related rules better than others. If you want tighter themes, for example Async split into channels, cancellation and core, or smaller modules around 4k tokens, I can regenerate it.
+>**3. rust-skills split**
+>I split the https://github.com/leonardomso/rust-skills repo into 44 small skills plus a router, packed in rust-skills-split.zip. The whole thing is about 270k tokens, so the cut is much finer than one skill per category. Each module is about 3.5–7.5k tokens by a rough chars/3.3 estimate; I couldn't count with a real tokenizer here. One module plus the router and some code to review fits comfortably in 32k.
+>How I cut it
+>Router: rust-00-router is the only skill to load first, at about 1.4k tokens. It has the one-at-a-time runbook, which modules suit which task, and a table of all modules with their sizes.
+>Modules: rust-01-… to rust-44-… follow the upstream priority order, from Ownership, Errors, Memory and Unsafe down to Linting and Anti-patterns. Big categories are split into parts, for example Async into 4 parts and Memory, API Design and Testing into 3 each. Small ones are combined, such as Conversions with Const.
+>Rule text: The rule text is verbatim. Each module has a rule list at the top, then every rule's Why, Bad and Good sections.
+>See Also links: I replaced the links with a plain Related: rule-ids line, because the per-rule files they pointed to no longer exist as separate files.
+>Checks: All 265 rules appear exactly once. The largest module is 24.9 KB.
+>Extra files: The zip also includes the upstream MIT LICENSE and a manifest.json with per-module sizes.
+>How to run them one by one
+>Load the router and pick modules for your task. Ownership and Errors are first for any Rust code.
+>Load one module, check your code against it, and write down short findings as rule-id | location | fix.
+>Drop the module and keep only the findings list.
+>Load the next module and repeat. At the end, merge the findings and apply the fixes.
+>Keep the code you review to roughly 10k tokens per pass, so a large file should be reviewed function by function.
+>The split inside a category follows the upstream index order, which is mostly thematic, so some parts group related rules better than others. If you want tighter themes, for example Async split into channels, cancellation and core, or smaller modules around 4k tokens, you can regenerate it.
 
 
 
@@ -510,7 +502,9 @@ The split inside a category follows the upstream index order, which is mostly th
 
 1. I inserted the following rule into the AGENTS.md files
    - Write "what did you decide that i did not tell you to decide" into the comment of the gitea issue or wiki of the project.
- 
+
+2. I moved modules of the rust-skills under the rust-code-review/references directory.
+    
 ## Example usage of this harness to develop a tetris game development in Rust on Linux Gnome.
 
 
