@@ -28,7 +28,9 @@ alias dport='docker container ls --format "table {{.ID}}\t{{.Names}}\t{{.Ports}}
 #After installing and running the services ( install directory and services directory ),  
 #Get API KEY from the NewAPI admin web intraface (http://localhost:3000/keys) , click on the copy icon near the Api Key of API_KEY_0 line.
 #The api key below is the one i get from my local machine.
-export OPENAI_API_KEY="sk-EoJCdSt5ZfEzQqny7AlzEfeyNiwRpT96bgrWnwKWGCSNPOgQ"
+export OPENAI_API_KEY="sk-KQECcTYWtqPv1H8e561wn9tKIdF97eJLSsRataPnOSt1Acfd"
+
+
 # Adress of the local newapi gateway
 export OPENAI_BASE_URL="http://localhost:3000/v1"  
 # The name "/local_model" is set in newapi

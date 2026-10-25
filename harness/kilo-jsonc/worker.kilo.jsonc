@@ -13,7 +13,7 @@
     "local": {
       "options": {
         "baseURL": "http://localhost:3000/v1",
-        "apiKey": "sk-EoJCdSt5ZfEzQqny7AlzEfeyNiwRpT96bgrWnwKWGCSNPOgQ"
+        "apiKey": "OPENAI_API_KEY"
       },
       "models": {
         "/local_model": {
@@ -31,7 +31,7 @@
     "bash": "allow",
     "fs": "allow",
     "external_directory": {
-      "{env:RUST_DEV_ENV}/reference-projects/*": "allow"
+      "RUST_DEV_ENV/reference-projects/*": "allow"
     }
   },
   "indexing": {
@@ -46,7 +46,7 @@
       "enabled": true,
       "environment": {
         "GITEA_HOST": "http://localhost:13000",
-        "GITEA_ACCESS_TOKEN": "{env:WORKER1_PERSONAL_ACCESS_TOKEN}"
+        "GITEA_ACCESS_TOKEN": "_GITEA_ACCESS_TOKEN_"
       }
     }
   },

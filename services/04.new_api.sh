@@ -81,6 +81,10 @@ Login as admin
 
 Click on the "Console" link found on top menu of the page
 
+Click on the "System Settings" found on the left menu > Billing and Payment > Model Pricing > Press "Add Model" > Model Name = "/local_model" , input price = "1" , then press on the  "save model prices" button.
+
+Click on the "Console" link found on top menu of the page
+
 Click on the "Channels" link found on the left menu.
 
 Click on the "Create Channel" button

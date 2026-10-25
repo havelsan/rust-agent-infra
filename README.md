@@ -67,6 +67,7 @@ Clone this repository into your wworkspace directory, source the release file an
 
 After installing services and tools, source the ~/workspace/rust-agent-infra/release file then start services by running the ~/workspace/rust-agent-infra/services/00.main.sh script.
 
+**Very Important Note :  To configure API_KEY please take a look at the end of services/04.new_api.sh file !** 
 
 ## Simple Usage Example 
 
@@ -500,15 +501,53 @@ Claude.ai gave the following response with the corrected scripts zip file :
 
 #### Manual Modifications
 
-1. I inserted the following rule into the AGENTS.md files
+1. I inserted the following rule into the coordinator and worker AGENTS.md files
    - Write "what did you decide that i did not tell you to decide" into the comment of the gitea issue or wiki of the project.
+
+2. In worker AGENTS.md file, i inserted the following lines :
+   - If your context gets filled while doing your work, assign the gitea issue back to coordinator,  for split.
 
 2. I moved modules of the rust-skills under the rust-code-review/references directory.
     
+
 ## Example usage of this harness to develop a tetris game development in Rust on Linux Gnome.
 
+0. You have to configure the COORDINATOR1_PERSONAL_ACCESS_TOKEN, WORKER1_PERSONAL_ACCESS_TOKEN, OPENAI_API_KEY . You may find them in previous sections.
 
+1. Open the terminal and source the rust-agent-infra/release file, source the release file in rust-dev-env.
 
+2. Run GITEA : "cd $RUST_DEV_ENV/devops/bin/ ; ./run_gitea.sh"
 
+3. Start LLM services : "cd $RUST_AGENT_INFRA_DIR/services && ./00.main.sh"
+
+4. Create the project's directory in the agent workspace :  "mkdir -p ~/agent-workspace/tetris-project"
+ 
+5. Install Harness : "$RUST_AGENT_INFRA_DIR/harness/install_harness.sh ~/agent-workspace/tetris-project"
+
+6. Start Coordinator : 
+   - Open a new terminal, 
+   - source the rust-agent-infra/release file ( source ~/workspace/rust-agent-infra/release )
+   - source the release file in rust-dev-env (source ~/sdk/rust-dev-env/release 
+   - go to coordinator-workspace ( cd ~/agent-workspace/tetris-project/coordinator-workspace/ )
+   - start the coordinator agent. ( ./start_agent.sh)
+   - write "continuously check the issues assigned to you and perform the related actions." in kilo input.
+   
+
+7. Start Worker :
+   - Open a new terminal, 
+   - source the rust-agent-infra/release file ( source ~/workspace/rust-agent-infra/release )
+   - source the release file in rust-dev-env (source ~/sdk/rust-dev-env/release 
+   - go to worker-workspace ( cd ~/agent-workspace/tetris-project/worker-workspace/ )
+   - start the worker agent.
+   - write "continuously check the issues assigned to you and perform the related actions." in kilo input.
+   
+
+8. Login as human1 to the gitea
+
+9. Select project-01 
+
+10. Assign a task to coordinator1 with Subject "Implement Tetris Game in Rust and Gnome" and the body of the task is written in $RUST_AGENT_INFRA_DIR/example-usage/Tetris-in-Rust-with-gtk-rs-Requirements.md file. You may copy and paste.
+
+ 
 
 
