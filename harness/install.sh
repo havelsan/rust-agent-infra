@@ -30,9 +30,11 @@ echo "Applying $RUST_AGENT_INFRA_DIR/harness to this directory ..."
 echo "You are in $WORKSPACE, we will create two sub directories for coordinator and for worker. "
 
 
+mkdir -p .kilo
 
-mkdir -p $agent_type-workspace/.kilo/agents
-mkdir -p $agent_type-workspace/.kilo/skills
+cp  -Rf $RUST_AGENT_INFRA_DIR/harness/agents .kilo/agents
+cp  -Rf $RUST_AGENT_INFRA_DIR/harness/skills .kilo/skills
+
     
 echo "
  export GITEA_OWNER=rust-agentic-org
@@ -62,11 +64,11 @@ echo "RUST_DEV_ENV=$RUST_DEV_ENV"
 perl -pi -e "s#RUST_DEV_ENV#$RUST_DEV_ENV#g" .kilo/kilo.jsonc
 GITEA_ACCESS_TOKEN=$COORDINATOR1_PERSONAL_ACCESS_TOKEN
 echo "GITEA_ACCESS_TOKEN=$GITEA_ACCESS_TOKEN"
-perl -pi -e "s#_GITEA_ACCESS_TOKEN_#$GITEA_ACCESS_TOKEN#g" $agent_type-workspace/.kilo/kilo.jsonc
+perl -pi -e "s#_GITEA_ACCESS_TOKEN_#$GITEA_ACCESS_TOKEN#g" .kilo/kilo.jsonc
 echo "OPENAI_API_KEY=$OPENAI_API_KEY"
-perl -pi -e "s#OPENAI_API_KEY#$OPENAI_API_KEY#g" $agent_type-workspace/.kilo/kilo.jsonc
+perl -pi -e "s#OPENAI_API_KEY#$OPENAI_API_KEY#g" .kilo/kilo.jsonc
      
-chmod +x $agent_type-workspace/start_agent.sh
+
 
 cp -f $RUST_AGENT_INFRA_DIR/harness/AGENTS.md  .
  

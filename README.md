@@ -477,13 +477,14 @@ Claude.ai gave the following response with the corrected scripts zip file :
  
 5. Install Harness : "$RUST_AGENT_INFRA_DIR/harness/install.sh ~/agent-workspace/tetris-project"
 
-6. Start Coordinator : 
+6. Start Kilo Code CLI Agent : 
    - Open a new terminal, 
    - source the rust-agent-infra/release file ( source ~/workspace/rust-agent-infra/release )
    - source the release file in rust-dev-env (source ~/sdk/rust-dev-env/release )
    - go to coordinator-workspace ( cd ~/agent-workspace/tetris-project/coordinator-workspace/ )
    - start the coordinator agent. ( ./start_agent.sh)
-   - write "continuously check the issues assigned to you and perform the related actions." in kilo input.
+   - write "start by calling coordinator, she will read gitea issues and start the  development cycle." in kilo input.
+   - Kilo agent asked me another question, i also esc'd it, i entered "coordinator should assign the gitea issue to analyzer?", then it started to work.
    
 7. Login as human1 to the gitea
 
@@ -491,6 +492,9 @@ Claude.ai gave the following response with the corrected scripts zip file :
 
 9. Assign a task to coordinator1 with Subject "Implement Tetris Game in Rust and Gnome" and the body of the task is written in $RUST_AGENT_INFRA_DIR/example-usage/Tetris-in-Rust-with-gtk-rs-Requirements.md file. You may copy and paste.
 
+ 
+ 
+ 
  
 
 
