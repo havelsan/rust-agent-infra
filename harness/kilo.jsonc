@@ -1,0 +1,67 @@
+
+{
+  "$schema": "https://app.kilo.ai/config.json",
+
+  // ONLY this provider is allowed
+  "enabled_providers": ["local"],
+
+  // 1. Point the default session to your custom provider and model identifier
+  "model": "local//local_model",
+
+  // 2. Define custom providers using the singular "provider" key block
+  "provider": {
+    "local": {
+      "options": {
+        "baseURL": "http://localhost:3000/v1",
+        "apiKey": "OPENAI_API_KEY"
+      },
+      "models": {
+        "/local_model": {
+          "name": "Local Model written in RUST_AGENT_INFRA_MODEL env. variable",
+          "limit": {
+            "context": 64000,
+            "output": 8000
+          }
+        }
+      }
+    }
+  },
+
+  "permission": {
+    "bash": "allow",
+    "fs": "allow",
+    "external_directory": {
+      "RUST_DEV_ENV/reference-projects/*": "allow"
+    }
+  },
+  "indexing": {
+    "enabled": false
+  },
+
+  "mcp": {
+    "gitea": {
+      "type": "local",
+      "enabled": true,
+      // -O loads only these tools: fewer tool schemas in the 32K context.
+      "command": [
+        "gitea-mcp", "-t", "stdio",
+        "-O", "list_issues,issue_read,issue_write,wiki_read,wiki_write,label_read,label_write"
+      ],
+      "environment": {
+        "GITEA_HOST": "http://localhost:13000",
+        "GITEA_ACCESS_TOKEN": "_GITEA_ACCESS_TOKEN_"
+      }
+    }
+  },
+
+  // Agents run unattended: allow the MCP tools (tool names are gitea_<tool>).
+  "permission": {
+    "gitea_*": "allow"
+  },
+
+  "plugin": [
+    "PONYTAIL_MJS"
+  ]
+}
+
+    

@@ -7,7 +7,7 @@ fi
 
 
 cd $RUST_AGENT_INFRA_DIR/dev-tools
-#git clone https://github.com/DietrichGebert/ponytail.git
+git clone https://github.com/DietrichGebert/ponytail.git
 
 
 grep ponytail ~/.config/kilo/kilo.jsonc >/dev/null

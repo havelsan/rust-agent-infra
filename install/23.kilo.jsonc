@@ -49,11 +49,7 @@
         "GITEA_ACCESS_TOKEN": "{env:GITEA_USER_PAT}"
       }
     }
-  },
-
-  "plugin": [
-    "PONYTAIL_MJS"
-  ]
+  }
 }
 
     

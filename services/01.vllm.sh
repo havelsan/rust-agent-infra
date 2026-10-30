@@ -50,10 +50,14 @@ COMMAND="sudo docker run --name $DOCKER_NAME --runtime nvidia --gpus all \
   --kv-cache-dtype fp8 \
   --enforce-eager \
   --max-num-seqs=4 \
-  --kv-cache-memory-bytes 650M \
-  --max-model-len 32000"
+  --kv-cache-memory-bytes 1300M \
+  --max-model-len 64000"
 
 
+#  --cpu-offload-gb 8 \
+#  --kv-offloading-size 8 \
+#  --kv-offloading-backend native \
+#  --disable-hybrid-kv-cache-manager \
 ## --kv-cache-memory=519837389 == 500MB
   ## --max-model-len 32000 : context len is 32K
 ##  --dtype float16 

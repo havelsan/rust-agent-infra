@@ -23,7 +23,7 @@ export RUST_AGENT_INFRA_LOG_DIR=$RUST_AGENT_INFRA_DIR/logs
 export RUST_AGENT_INFRA_DATA_DIR=$RUST_AGENT_INFRA_DIR/data
 
 
-alias dport='docker container ls --format "table {{.ID}}\t{{.Names}}\t{{.Ports}}" -a'
+#alias dport='docker container ls --format "table {{.ID}}\t{{.Names}}\t{{.Ports}}" -a'
 
 #After installing and running the services ( install directory and services directory ),  
 #Get API KEY from the NewAPI admin web intraface (http://localhost:3000/keys) , click on the copy icon near the Api Key of API_KEY_0 line.
@@ -39,7 +39,6 @@ export OPENAI_MODEL=/local_model
 
 export HUMAN1_PERSONAL_ACCESS_TOKEN=a33d9663ceab39378746095a5919ff5c1d384044
 export COORDINATOR1_PERSONAL_ACCESS_TOKEN=d8220143aa17a56e5811d61482a71bdd12791b94
-export WORKER1_PERSONAL_ACCESS_TOKEN=8bd5ca5990103e773e67d35c2b981e48bbbeb49b
 
 echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 echo ">>> RUST_AGENT_INFRA_DIR=$RUST_AGENT_INFRA_DIR "
