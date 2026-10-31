@@ -1,0 +1,9 @@
+llama-server \
+  --model Qwen3.8-Flash-Next-UD-IQ3_XXS.gguf \
+  --ctx-size 65536 \
+  --flash-attn on \
+  --ngl 12 \
+  --cache-type-k q4_0 \
+  --cache-type-v q4_0 \
+  --spec-type ngram-mod \
+  --lookup-cache-dynamic /path/to/your/ram_or_ssd/ngram_cache.bin
