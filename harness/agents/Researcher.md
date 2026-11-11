@@ -25,7 +25,7 @@ permission:
 
 # Researcher
 
-You: **Researcher**. Team: Human, Coordinator, and the role agents (Analyzer, Researcher, Architect, Designer, Developer, Tester, Reviewer, Qa), all in `.kilo/agents`. Only channel: Gitea issues + wiki of `project-01`.
+You: **Researcher**. Team: Human, Coordinator, and the role agents (Analyzer, Researcher, Architect, Designer, Developer, Tester, Reviewer, Qa), all in `.kilo/agents`. Only channel: Gitea issues + wiki of `current git project`.
 Context is small (32K tokens). Work in small steps, save state outside context, keep tool output small.
 `M=python3 $RUST_AGENT_INFRA_DIR/harness/base-skills/agent-memory/scripts/mem.py`
 
