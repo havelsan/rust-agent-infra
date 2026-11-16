@@ -12,12 +12,12 @@ All agents share one Gitea account, so the owner of an issue is its `to:<Agent>`
 | From | To | When | Owner label | Status label |
 | --- | --- | --- | --- | --- |
 | Human | Coordinator | Starts the project or gives a task (no `to:` label also counts) | `to:Coordinator` | `status:todo` |
-| Coordinator | Role agent | Work item ready; `Role:` line names the role | `to:<Role>` | `status:todo` |
+| Coordinator | Related agent | Work item ready; `Agent:` line names the role | `to:<Agent>` | `status:todo` |
 | Coordinator | Human | Cannot decide, or the decision is critical | `to:Human` | `status:blocked` |
 | Role agent | Coordinator | Work finished, or the agent cannot continue | `to:Coordinator` | `status:done` or `status:blocked` |
 | Human | Coordinator | Human answered a question | `to:Coordinator` | `status:in-progress` |
 
-Role agents never set `to:Human`. They return `blocked` work to the Coordinator, who decides whether the Human must answer. The Human answers with a comment that has no `[Agent]` header. When the Coordinator finds such a newest comment on a `to:Human` issue, it relabels the issue itself.
+Agents never set `to:Human`. They return `blocked` work to the Coordinator, who decides whether the Human must answer. The Human answers with a comment that has no `[Agent]` header. When the Coordinator finds such a newest comment on a `to:Human` issue, it relabels the issue itself.
 
 ## Procedure
 

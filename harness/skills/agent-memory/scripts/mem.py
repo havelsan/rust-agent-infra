@@ -18,7 +18,7 @@ import time
 from pathlib import Path
 
 MEM_DIR = Path(os.environ.get("MEM_DIR", ".mem"))
-CTX = int(os.environ.get("MEM_CONTEXT_TOKENS", "32000"))
+CTX = int(os.environ.get("MEM_CONTEXT_TOKENS", "64000"))
 MAX_STEPS, STEP_CHARS, SUM_CHARS, NOTE_CHARS, NOTES_CAP = 8, 160, 240, 300, 3000
 MARK = "<!-- agent-checkpoint -->"
 STATE_RE = re.compile(r"<!-- agent-state: (\{.*?\}) -->", re.S)

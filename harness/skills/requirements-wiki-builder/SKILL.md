@@ -20,7 +20,7 @@ REQ-001: The system shall log every command within 1 s. [status: accepted] [sour
 4. Publish:
 
 ```bash
-python3 $RUST_AGENT_INFRA_DIR/harness/library/skills/requirements-wiki-builder/scripts/build_requirements_wiki.py reqs.md [--by-prefix] [--max-chars 5000]
+python3 $RUST_AGENT_INFRA_DIR/harness/skills/requirements-wiki-builder/scripts/build_requirements_wiki.py reqs.md [--by-prefix] [--max-chars 5000]
 ```
 
 The script does not touch Gitea. It writes page files to `.mem/wiki-out/` (`Requirements-Index.md`, `Requirements-Index-2.md`, and `Requirements-<PREFIX>.md` with `--by-prefix`) and prints the file names. A page is split when it passes `--max-chars` (`gitea-wiki`: pages stay small).

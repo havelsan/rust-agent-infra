@@ -19,7 +19,7 @@ A Developer who starts with an empty context needs a spec with exact states and 
 4. Check the spec:
 
 ```bash
-python3 $RUST_AGENT_INFRA_DIR/harness/library/skills/ux-ui-design/scripts/check_ui_spec.py ui-spec.md
+python3 $RUST_AGENT_INFRA_DIR/harness//ux-ui-design/scripts/check_ui_spec.py ui-spec.md
 ```
 
 5. Publish it as the wiki page `UI Spec - <name>` (`gitea-wiki`: `wiki_write`).

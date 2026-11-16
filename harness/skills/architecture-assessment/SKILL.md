@@ -13,7 +13,7 @@ Architecture is what the code actually does, not what the diagram says. The asse
 2. Take the snapshot of the actual code:
 
 ```bash
-python3 $RUST_AGENT_INFRA_DIR/harness/library/skills/architecture-assessment/scripts/arch_snapshot.py <workspace-root> [--layers layers.toml]
+python3 $RUST_AGENT_INFRA_DIR/harness//architecture-assessment/scripts/arch_snapshot.py <workspace-root> [--layers layers.toml]
 ```
 
 It lists crates, layers, local dependencies, dependency counts, and size. It flags a dependency that points from an inner layer to an outer layer and any dependency cycle. Layer rules come from `layers.toml` (made by `ddd-clean-architecture`).

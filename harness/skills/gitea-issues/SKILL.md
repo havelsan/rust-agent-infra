@@ -1,6 +1,6 @@
 ---
 name: gitea-issues
-description: Read, create, comment on, label, route, and close project-01 Gitea issues with the gitea-mcp tools. Use for all issue communication - picking up work, reporting, handing off.
+description: Read, create, comment on, label, route, and close current git project Gitea issues with the gitea-mcp tools. Use for all issue communication - picking up work, reporting, handing off.
 ---
 
 # gitea-issues
@@ -37,7 +37,6 @@ Kilo shows them as `gitea_<tool>` when the MCP server is named `gitea`. Every ca
 
 - `replace_labels` replaces ALL labels. Take the current labels from `issue_read get`, swap the `to:` and `status:` entries, keep the rest, and send the full list. Change owner and status in one call.
 - `add_labels` and `replace_labels` fail on a label that does not exist. Create labels first (setup below).
-- The role of a work item is the first body line `Role: <Name>`. The Coordinator writes it. Nobody else edits it.
 
 ## Setup (once per repository)
 
@@ -49,7 +48,7 @@ The Coordinator checks with `label_read` (method `list`). For each missing label
 | `status:in-progress` | `#fbca04` |
 | `status:blocked` | `#d93f0b` |
 | `status:done` | `#0e8a16` |
-| `to:Coordinator`, `to:Analyzer`, `to:Researcher`, `to:Architect`, `to:Designer`, `to:Developer`, `to:Tester`, `to:Reviewer`, `to:Qa` | `#5319e7` |
+| `to:Coordinator`, `to:Analyzer`, `to:Researcher`, `to:RequirementsEngineer`, `to:Architect`, `to:Designer`, `to:Developer`, `to:Tester`, `to:Reviewer`, `to:Qa` | `#5319e7` |
 | `to:Human` | `#b60205` |
 
 ## Rules

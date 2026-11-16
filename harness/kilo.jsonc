@@ -27,6 +27,16 @@
     }
   },
 
+  "instructions": [
+    ".kilo/rules/*.md"
+  ],
+  "agent": {
+    "behavior": {
+      // Explicitly tells the agent backend to initialize and read from memory on startup
+      "autoRecallMemory": true
+    }
+  },
+
   "permission": {
     "bash": "allow",
     "fs": "allow",
@@ -36,27 +46,6 @@
   },
   "indexing": {
     "enabled": false
-  },
-
-  "mcp": {
-    "gitea": {
-      "type": "local",
-      "enabled": true,
-      // -O loads only these tools: fewer tool schemas in the 32K context.
-      "command": [
-        "gitea-mcp", "-t", "stdio",
-        "-O", "list_issues,issue_read,issue_write,wiki_read,wiki_write,label_read,label_write"
-      ],
-      "environment": {
-        "GITEA_HOST": "http://localhost:13000",
-        "GITEA_ACCESS_TOKEN": "_GITEA_ACCESS_TOKEN_"
-      }
-    }
-  },
-
-  // Agents run unattended: allow the MCP tools (tool names are gitea_<tool>).
-  "permission": {
-    "gitea_*": "allow"
   },
 
   "plugin": [

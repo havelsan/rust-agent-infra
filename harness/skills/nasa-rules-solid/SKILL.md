@@ -14,7 +14,7 @@ These rules exist because the software may run in places where a crash or a sile
 3. After coding, run the scanner on your crates:
 
 ```bash
-python3 $RUST_AGENT_INFRA_DIR/harness/library/skills/principles-check/scripts/rust_rules_scan.py crates/ --strict
+python3 $RUST_AGENT_INFRA_DIR/harness//principles-check/scripts/rust_rules_scan.py crates/ --strict
 ```
 
 4. Fix each finding or write why it is acceptable in a code comment (`// Rule 7: value checked above`) and in the issue comment.

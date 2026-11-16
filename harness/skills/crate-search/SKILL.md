@@ -13,7 +13,7 @@ Writing code that a mature crate already provides costs time and adds defects. T
 2. Search with two or three different queries (synonyms, the protocol name, the task name):
 
 ```bash
-python3 $RUST_AGENT_INFRA_DIR/harness/library/skills/crate-search/scripts/search_crates.py "mqtt client" --sort downloads
+python3 $RUST_AGENT_INFRA_DIR/harness//crate-search/scripts/search_crates.py "mqtt client" --sort downloads
 ```
 
 The script drops every crate with fewer than 10000 "Downloads all time". This is a project rule, not a preference. Do not add a dropped crate to the list, even if it looks good.

@@ -36,9 +36,7 @@ export OPENAI_BASE_URL="http://localhost:3000/v1"
 # The name "/local_model" is set in newapi
 export OPENAI_MODEL=/local_model
 
-
-export HUMAN1_PERSONAL_ACCESS_TOKEN=a33d9663ceab39378746095a5919ff5c1d384044
-export COORDINATOR1_PERSONAL_ACCESS_TOKEN=d8220143aa17a56e5811d61482a71bdd12791b94
+export GITEA_AGENT_PERSONAL_ACCESS_TOKEN=2f9a261f35a9bbd8c2e054165b3d55b4cd1f43ea
 
 echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 echo ">>> RUST_AGENT_INFRA_DIR=$RUST_AGENT_INFRA_DIR "

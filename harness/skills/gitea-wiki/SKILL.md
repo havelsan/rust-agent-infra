@@ -1,6 +1,6 @@
 ---
 name: gitea-wiki
-description: List, read, create, and update project-01 Gitea wiki pages with the gitea-mcp tools. Use to store or look up requirements, architecture pages, ADRs, specs, and status reports.
+description: List, read, create, and update current git project Gitea wiki pages with the gitea-mcp tools. Use to store or look up requirements, architecture pages, ADRs, specs, and status reports.
 ---
 
 # gitea-wiki
@@ -21,7 +21,8 @@ Every call needs `owner` and `repo` (see `gitea-issues`).
 `content` is plain markdown text. Do not base64 it. A page name uses dashes for spaces (`Requirements-Index`).
 
 ## Rules
-
+- Never change the wiki content created by "human". Make a copy if needed then change it.
+- Never change the 01-project-definition page.
 - There is no slicing. `get` returns the whole page into your context. Keep each page under about 5000 characters. Split bigger content into linked pages (`Name`, `Name 2`) with an index page.
 - Create or update: check `wiki_read list` first. Create when the page is missing, update when it exists.
 - `update` replaces the whole page. Read the current page (`get`) and merge first. An update built from memory deletes other agents' text.

@@ -45,4 +45,4 @@ $M clear 12                        # after issue-completion
 
 - Write results as facts, not stories. Keep long text in files or the wiki and store the path.
 - After a reset, trust `recall`. Do not re-read finished work.
-- `MEM_CONTEXT_TOKENS` sets the window size (default 32000).
+- `MEM_CONTEXT_TOKENS` sets the window size (default 64000).

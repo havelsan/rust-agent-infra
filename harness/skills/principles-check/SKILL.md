@@ -13,7 +13,7 @@ The principles are fixed project rules, kept in `$RUST_DEV_ENV/reference-project
 2. For code, run the scanner. It reports likely NASA-rule problems with file and line:
 
 ```bash
-python3 $RUST_AGENT_INFRA_DIR/harness/library/skills/principles-check/scripts/rust_rules_scan.py src/ [--max-fn-lines 60] [--strict]
+python3 $RUST_AGENT_INFRA_DIR/harness//principles-check/scripts/rust_rules_scan.py src/ [--max-fn-lines 60] [--strict]
 ```
 
 3. For requirements and designs, apply the checklist in `references/rules.md` by reading.

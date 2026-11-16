@@ -114,7 +114,7 @@ We prepared rust development environment using https://github.com/havelsan/rust-
 	source ~/workspace/rust-agent-infra/release
 	cd ~/agentspace/agent-managed-rust-project
 	kilo
-		> Make a step by step plan for to improve the code in simple_calculator project using the code review notes in ~/agentspace/agent-managed-rust-project/simple_calculator/issues/REVIEW-001.md and write the into ~/agentspace/agent-managed-rust-project/simple_calculator/plans/PLAN-01.md.  Steps of the plan should be as small as possible so that we can fit into 32k context :) 
+		> Make a step by step plan for to improve the code in simple_calculator project using the code review notes in ~/agentspace/agent-managed-rust-project/simple_calculator/issues/REVIEW-001.md and write the into ~/agentspace/agent-managed-rust-project/simple_calculator/plans/PLAN-01.md.  Steps of the plan should be as small as possible so that we can fit into 64k context :) 
 			> The LLM Says : Plan generated.
 		> Execute each step one by one. Write the executed steps of the plan into ~/agentspace/agent-managed-rust-project/simple_calculator/plans/PLAN-REPORT-01.md
 			> The LLM Says : Compaction exhausted: context still exceeds model limits after 3 attempts
@@ -268,8 +268,23 @@ Before starting to work with agents we create the folowing organization, users a
         1. Organization Name : rust-agentic-org
         2. Visibility : public
         3. Permissions : repository admin can add and remove access for teams
+   5. Click on rust-agentic-org and click on settings
+   6. Click on "Labels" on left side panel.
+   7. Click on New Label
+   8. Define the following labels:
+   8.1. to:Human
+   8.2. to:Coordinator
+   8.3. to:Analyzer
+   8.4. to:Architect
+   8.5. to:Designer
+   8.6. to:Developer
+   8.7. to:Qa
+   8.8. to:RequirementsEngineer
+   8.9. to:Reviewer
+   8.10. to:Tester
+   
 
-2. Create Users (human1, coordinator1 ( the AI user) ) :  
+2. Create Users (human, agent ( the AI user) ) :  
 
    1. Goto http://localhost:13000/ GITEA in browser.
    2. Login as admin (if you follow rus-dev-env , default is adm001/adm001+++ ) 
@@ -280,33 +295,31 @@ Before starting to work with agents we create the folowing organization, users a
    7. Click on the "Create User Account" button on the right-top of the page.
         1. Authentication Source : local
         2. User visibility : public
-        3. User name : human1
-        4. Email : human1@localhost.org  
-        5. Password : human1+++
+        3. User name : agent
+        4. Email : agent@localhost.org  
+        5. Password : qwe123***
         6. Un check the "Require user to change the password"
         7. click "Create user account"
    8. create personal access tokens
-        1. Login as human1
+        1. Login as agent
         2. Click on the rigt-top most icon on the page 
         3. Click on the "settings" menu item
         4. Click on the "Applications" menu item
         5. Generate new token
-            1. Token Name : HUMAN1_PERSONAL_ACCESS_TOKEN
+            1. Token Name : GITEA_AGENT_PERSONAL_ACCESS_TOKEN
             2. Repository and Organization Access : All
-            3. Token Permissions : (activitypub, issue, misc, notification, organization, package, repository, user)  , (  Read and Write )
+            3. Token Permissions : (activitypub, issue, misc, notification, organization, package, repository, user)  = (  Read and Write )
             4. Click on the "Create Token" button
             5. copy the token appearing on the top of the page.
-            6. insert the "export HUMAN1_PERSONAL_ACCESS_TOKEN=a33d9663ceab39378746095a5919ff5c1d384044" line in the $HOME/workspace/rust-agent-infra/release 
+            6. insert the "export GITEA_AGENT_PERSONAL_ACCESS_TOKEN=2f9a261f35a9bbd8c2e054165b3d55b4cd1f43ea" line in the $HOME/workspace/rust-agent-infra/release 
    9. In the end the following three lines should inserted in the $HOME/workspace/rust-agent-infra/release file.
 
-   
-> export HUMAN1_PERSONAL_ACCESS_TOKEN=a33d9663ceab39378746095a5919ff5c1d384044
 
-> export COORDINATOR1_PERSONAL_ACCESS_TOKEN=d8220143aa17a56e5811d61482a71bdd12791b94
+> export GITEA_AGENT_PERSONAL_ACCESS_TOKEN=2f9a261f35a9bbd8c2e054165b3d55b4cd1f43ea
 
 
 
-3. Create project-01 Repository :
+3. Create "purchase" Repository :
 
    1. Login GITEA as admin001 user.
    2. Click on the "Explore" menu item on the top-left menu.
@@ -320,13 +333,13 @@ Before starting to work with agents we create the folowing organization, users a
       5. Create Repositories is checked ( Memebers can cretae new repositories within the organization)
       6. Permissin : Administrator Access
       7. Click on the "Create Team" button
-      8. Add coordinator1, human1 users to this team using "Add Team Member" 
+      8. Add agent, human users to this team using "Add Team Member" 
    6. Return back to the "rust-agentic-org" page using Explore > Organizations > rust-agentic-org
    7. Create a new repository using "Create New Repository" button
       1. Owner : rust-agentic-org
-      2. Repository name : project-01
+      2. Repository name : purchase
       3. Visibility: NOT CHECKED: Mahe repository Private. ( The repository is public)
-      4. Description : Project 01
+      4. Description : Purchase List Coordinator
       5. Tepmplate :  DID_NOT_SELECT_ANYTHING
       6. Issue Labels : Advanced
       7. .gitignore : Rust
@@ -338,81 +351,93 @@ Before starting to work with agents we create the folowing organization, users a
       13. Click on the Create Repository
       
 
-  
+We assume that an agentic team composed of Human, Coordinator, RequirementsEngineer, Analyzer, Researcher, Architect, Developer, Designer, Reviewer, Tester, and QA uses the repository's issues and wiki in Gitea to communicate with each other. 
+
+When a Human assigns an issue to the Coordinator, the project starts. The Coordinator may assign an issue back to the Human if it cannot determine what to do.
+
+> **Note:** The Kilo agent (which automatically starts the Coordinator sub-agent) is launched by running the `start_agent.sh` command installed by the `$RUST_AGENT_INFRA_DIR/harness/install.sh` script.
+
+
+
 ### Agents
 
-We currently assume that a team of agents (agentic-team composed of human and coordinator) will use project-01 git repository's issues and wiki in gitea to communicate each other. When a Human assigns an issue to Coordinator (the agent) the project starts. Coordinator may assign an issue to human if it can not determine what to do. 
+We currently assume that a team of agents (agentic-team composed of Human, Coordinator, RequirementsEngineer, Analyzer, Researcher, Architect, Developer, Designer, Reviewer, Tester, Qa) will use "purchase"  git repository's issues and wiki in gitea to communicate each other. When a Human assigns an issue to Coordinator (the agent) the project starts. Coordinator may assign an issue to human if it can not determine what to do. 
 
 | Agent No | Agent Name                             | Description               |
 | ------: | ------------------------------------- | ---------------------- |
 |   **0** | Human                                 |  Starts the project by assigning an issue to the coordinator. Every critical decision should be asked to this role through the gitea issues.|
 |   **1** | Coordinator                           |  Central coordination agent. Owns project-level workflow; communicates with the Human and all agents through Gitea Issues; assigns, tracks, and escalates work. Coordinator assigns the issue to the worker. Also the role to use while resolving the issue is indicated within the issue by coordinator. |
-|   **2** | Analyzer                              |  Analyze the assigned issue or document link assigned using a gitea issue, checks consistency, ambiguity, contradiction, completeness, redundancy, validity, relevance, accuracy, clarity, correctness, entailment, satisfiability. Build wiki for requirements of a project if the coordinator asks for it. Also check for asd-ste100 using asd-ste10-skill that can be found in $RUST_AGENT_INFRA_DIR/harness/library/skills. Also $RUST_DEV_ENV/reference-projects/PRINCIPLES.md (Elon Musk's recommendations, SOLID, NASA's 10 rules) and COMMON_MISTAKES.md files are taken into account. |
-|   **3** | Researcher                            |  Search for a ready-to-use library/framework in rust language for the current project's architectural, code or design requirement. If a crate has less then 10000 "Downloads all time" , then don't use it, directly ommit it.|
-|   **4** | Architect                             |  This role builds the software architecture. Coordinator periodically loads this role to check the architectutal status of a project. |
-|   **5** | Developer                             |  Rust code developer. Domain driven design, Clean Architecture, Test Driven Development, Data Driven Test, Nasa rules, Solid principles.  |
-|   **6** | Designer                              |  UX and UI designer. |
-|   **7** | Reviewer                              |  Rust Code Reviewer. |
-|   **8** | Tester                                |  Rust Test Code Writer. |
-|   **9** | Qa                                    |  Quality Assurance Engineer. Makes the last checks and builds the final rpm and deb package for project.|
+|   **2** | RequirementsEngineer                  |  Requirement Engineer agent analyzes requirements and generates use cases, user stories, test cases. |
+|   **3** | Analyzer                              |  Analyze the assigned issue or document link assigned using a gitea issue, checks consistency, ambiguity, contradiction, completeness, redundancy, validity, relevance, accuracy, clarity, correctness, entailment, satisfiability. Build wiki for requirements of a project if the coordinator asks for it. Also check for asd-ste100 using asd-ste10-skill that can be found in $RUST_AGENT_INFRA_DIR/harness/library/skills. Also $RUST_DEV_ENV/reference-projects/PRINCIPLES.md (Elon Musk's recommendations, SOLID, NASA's 10 rules) and COMMON_MISTAKES.md files are taken into account. |
+|   **4** | Researcher                            |  Search for a ready-to-use library/framework in rust language for the current project's architectural, code or design requirement. If a crate has less then 10000 "Downloads all time" , then don't use it, directly ommit it.|
+|   **5** | Architect                             |  This role builds the software architecture. Coordinator periodically loads this role to check the architectutal status of a project. |
+|   **6** | Developer                             |  Rust code developer. Domain driven design, Clean Architecture, Test Driven Development, Data Driven Test, Nasa rules, Solid principles.  |
+|   **7** | Designer                              |  UX and UI designer. |
+|   **8** | Reviewer                              |  Rust Code Reviewer. |
+|   **9** | Tester                                |  Rust Test Code Writer. |
+|   **10** | Qa                                    |  Quality Assurance Engineer. Makes the last checks and builds the final rpm and deb package for project.|
 
 
 
-NOTE: Kilo agent (Automatically starts Coordinator sub agent) is started by running start_agent.sh command installed by $RUST_AGENT_INFRA_DIR/harness/intall.sh script. The start_agent.sh script does the following :
-1. Creates workspace directory for all AI modeules  in the current project's directory for coordinator. ( e.g. $HOME/workspace/my-project/coordinator-space). Each workspace has it's own .kilo/kilo.jsonc file containing corresponding GITEA_ACCESS_TOKEN parameter name as COORDINATOR1_PERSONAL_ACCESS_TOKEN and WORKER1_PERSONAL_ACCESS_TOKEN respectively. 
-2. Links base skills from $RUST_AGENT_INFRA_DIR/harness/base-skills directory into .kilo/skills directory such as gitea related skills.
+NOTE: Kilo agent (Automatically starts Coordinator sub agent) is started by running start_agent.sh command installed by $RUST_AGENT_INFRA_DIR/harness/intall.sh script. 
 
 
 ### Skills Catalog (Rust, Gitea-driven)
 
-| ID | Skill | Description | Used by | 
-| --- | --- | --- | --- | --- |
-| B-01 | `gitea-issues` | List, read, create, comment on, assign, and change state of issues in project-01 using the agent's own `GITEA_ACCESS_TOKEN`. |  All Agents| 
-| B-02 | `gitea-wiki` | Read, create, and update wiki pages in project-01. | All Agents | 
-| B-03 | `issue-comment-protocol` | Standard comment format: what was done, files or pages changed, result, next step. Keeps handoffs readable for Human and other agents. | All Agents| 
-| B-04 | `gitea-assignment-handoff` | Rules for assigning an issue to Human, Coordinator, or Worker, and for changing state (open, in progress, done, blocked). | All Agents | 
-| C-01 | `issue-triage` | Read a new Human issue, split it into work items, and create the Worker issues. | Coordinator | 
-| C-02 | `role-selection` | Choose the role for each Worker issue and write it clearly in the issue body (e.g. `Role: Analyzer`). | Coordinator | 
-| C-03 | `human-escalation` | Detect an unclear or critical decision, write the question with options, and assign the issue to Human. | Coordinator | 
-| C-04 | `progress-tracking` | Track open and blocked issues, find stalled work, and report status in an issue or wiki page. | Coordinator | 
-| C-05 | `architecture-checkpoint` | Create periodic issues for the Architect role to check the architectural status of the project. | Coordinator | 
-| W-01 | `issue-polling` | Continuously read assigned issues of project-01 and pick the next one to work on. | All Agents | 
-| W-02 | `role-loader` | Read the role named in the issue and load it from `$RUST_AGENT_INFRA_DIR/harness/library/roles`. | All Agents | 
-| W-03 | `issue-completion` | Change the issue state, add the result comment, and assign back to Coordinator when needed. | All Agents | 
-| W-04 | `worker-reset` | Run `$RUST_AGENT_INFRA_DIR/harness/clear_worker.sh`, then `/reset` and `/reload`. | All Agents | 
-| R-01 | `asd-ste100` | Check text against ASD-STE100 Simplified Technical English. | Analyzer | 
-| R-02 |  `requirements-quality-check` | Check consistency, ambiguity, contradiction, completeness, redundancy, validity, relevance, accuracy, clarity, correctness, entailment, and satisfiability of an issue or linked document. | Analyzer | 
-| R-03 | `requirements-wiki-builder` | Build and update the project requirements wiki when the Coordinator asks. | Analyzer | 
-| R-04 | `principles-check` | Check work against `$RUST_DEV_ENV/reference-projects/PRINCIPLES.md` (Elon Musk's recommendations, SOLID, NASA's 10 rules) and `COMMON_MISTAKES.md`. | Analyzer | 
-| R-05 |  `crate-search` | Find a ready-to-use Rust crate for an architecture, code, or design requirement. | Researcher |
-| R-06 |  `crate-download-filter` | Reject any crate with fewer than 10000 "Downloads all time". Report only crates that pass. | Researcher |
-| R-07 |  `architecture-assessment` | Review the current architecture against requirements. Report gaps, risks, and drift. | Architect |
-| R-08 | `architecture-wiki` | Write architecture pages and decision records (ADR) in the wiki. | Architect |
-| R-09 | `ddd-clean-architecture` | Define bounded contexts, layers, and dependency rules for Rust projects. | Architect |
-| R-10 |  `rust-ddd-clean-arch-dev` | Implement Rust code with Domain-Driven Design and Clean Architecture. | Developer |
-| R-11 | `rust-tdd` | Test Driven Development workflow, including data-driven tests. | Developer |Developer |
-| R-12 | `nasa-rules-solid` | Apply NASA's 10 rules and SOLID principles while coding. | Developer |Developer |
-| R-13 | `ux-ui-design` | Produce UX flows and UI designs and attach them to the issue or wiki. |  Designer |
-| R-14 |`rust-code-review` | Review Rust code for correctness, style, `clippy` findings, principles, and common mistakes. |  Reviewer | 
-| R-15 | `rust-test-writing` | Write unit, integration, and data-driven tests for Rust code. | Tester | 
-| R-16 | `release-checklist` | Run the final quality checks before release. |  Qa |
-| R-17 | `rpm-deb-packaging` | Build the final `.rpm` and `.deb` packages (e.g. with `cargo-generate-rpm` and `cargo-deb`). |  Qa |
+| No. | Skill Path | Description | Agents Using |
+| ----- | ----- | ----- | ----- |
+| 1 | `agent-memory` | Layered memory for a small context window - plan, step results, and notes saved outside the context, checkpointed to the Gitea issue, and restored after /reset. Use it at the start of every issue, after every step, when context is above 60 percent, and when resuming an interrupted issue. | Analyzer, Architect, Coordinator, Designer, Developer, Qa |
+| 2 | `architecture-assessment` | Assess the real Rust workspace architecture against the design - layers, cycles, drift - with severity. Use for Architect checkpoints and structure reviews. | Architect |
+| 3 | `architecture-checkpoint` | Create a periodic Architect issue that checks architecture drift. Use after several Developer issues, before a release, or after structural changes. | Coordinator |
+| 4 | `architecture-wiki` | Write the architecture overview, status page, and numbered ADRs in the wiki. Use when recording a design decision or an assessment. | Architect |
+| 5 | `asd-ste100` | Use when English text must be parsed without a human to resolve ambiguity — tool descriptions, error messages, inter-agent instructions, system prompts, status reports — and misreading has a real cost, or when text reads as dense, hedged, or easy to misparse. Triggers: disambiguate, STE100 rewrite, apply Simplified Technical English, plain-language rewrite, controlled-language rewrite, rewrite so an agent cannot misread this. Not for creative or marketing copy. | Analyzer |
+| 6 | `crate-download-filter` | Enforce the rule that no Rust crate under 10000 all-time downloads is used. Use whenever a dependency is proposed, reviewed, or added. | Researcher |
+| 7 | `crate-search` | Find Rust crates for a need on crates.io and drop crates under 10000 all-time downloads. Use for Researcher tasks. |Researcher |
+| 8 | `ddd-clean-architecture` | Define bounded contexts and layers and scaffold a four-layer Cargo workspace with layers.toml. Use when designing project or module structure. | Architect |
+| 9 | `gitea-assignment-handoff` | Rules for passing an issue between Human, Coordinator, and role agents with the right owner and status labels. Use when handing off, escalating, or returning work. | Analyzer, Architect, Coordinator, Designer, Developer, Qa |
+| 10 | `gitea-issues` | Read, create, comment on, label, route, and close current git project Gitea issues with the gitea-mcp tools. Use for all issue communication - picking up work, reporting, handing off. | Analyzer, Architect, Coordinator, Designer, Developer, Qa |
+| 11 | `gitea-wiki` | List, read, create, and update current git project Gitea wiki pages with the gitea-mcp tools. Use to store or look up requirements, architecture pages, ADRs, specs, and status reports. | Analyzer, Architect, Coordinator, Designer, Developer, Qa |
+| 12 | `graph-memory` | Find code, modules, requirements, and how they connect by querying a graphify knowledge graph instead of reading files. Use it before opening or grepping source files, when asked how things relate, and after code changes to refresh the graph. | Analyzer, Architect, Coordinator, Designer, Developer, Qa |
+| 13 | `human-escalation` | Ask the Human a decision question through a blocked issue with options and a recommendation. Use for unclear, critical, or conflicting decisions. | Coordinator |
+| 14 | `issue-comment-protocol` | Standard format for every agent comment on an issue - author header, what was done, result, files changed, next step. Use whenever you finish, block, or report on an issue. | Analyzer, Architect, Coordinator, Designer, Developer, Qa |
+| 15 | `issue-completion` | Finish a role issue with the standard comment, status label, hand back to the Coordinator, and memory clear. Use when work is done or blocked. | Analyzer, Architect, Designer, Developer, Qa |
+| 16 | `issue-polling` | Find the next open issue labeled for this agent, resuming an interrupted one first. Use when an agent starts as its own session, resets, or has no task. | Analyzer, Architect, Designer, Developer, Qa |
+| 17 | `issue-triage` | Split a Human goal into small, ordered role issues with one role each and acceptance criteria. Use when the Coordinator gets a new goal, a Human answer, or a finished role issue. | Coordinator |
+| 18 | `karpathy-guidelines` | Behavioral guidelines to reduce common LLM coding mistakes. Use when writing, reviewing, or refactoring code to avoid overcomplication, make surgical changes, surface assumptions, and define verifiable success criteria. |Developer, Reviewer |
+| 19 | `lean-shell` | Run shell commands with small output using rtk (Rust Token Killer), with a safe fallback. Use it for every command that can print more than about 30 lines - git, cargo build, test, clippy, grep, find, ls - and when reading files. | Analyzer, Architect, Coordinator, Designer, Developer, Qa |
+| 20 | `minimal-build` | Write the least code that meets the requirement, using a ponytail-style ladder before any new code, and keep each step's diff small. Use it before writing code, a new function, a dependency, or a document section, and when reviewing a diff for over-building. | Analyzer, Architect, Coordinator, Designer, Developer, Qa |
+| 21 | `nasa-rules-solid` | Apply NASA's 10 rules and SOLID to Rust code. Use when writing or checking Rust for safety and design. | Developer |
+| 22 | `principles-check` | Check requirements, designs, or Rust code against PRINCIPLES.md (Musk, SOLID, NASA rules) and COMMON_MISTAKES.md, with a Rust scanner. Use for Analyzer, Architect, Developer, and Reviewer checks. | Analyzer, Architect |
+| 23 | `progress-tracking` | Report issue status by label and find stalled, blocked, and waiting issues. Use at the start of each Coordinator cycle and when asked where the project stands. | Coordinator |
+| 24 | `release-checklist` | Run the final quality gate before release and report pass or fail. Use for Qa release tasks, before packaging. | Qa |
+| 25 | `requirements-quality-check` | Check requirements or an issue for consistency, ambiguity, contradiction, completeness, redundancy, validity, relevance, accuracy, clarity, correctness, entailment, satisfiability. Use for Analyzer review tasks. | Analyzer |
+| 26 | `requirements-wiki-builder` | Build and update the requirements index in the wiki from requirement lines. Use when the Coordinator asks the Analyzer to build or refresh the requirements wiki. | Analyzer |
+| 27 | `role-selection` | Choose the role agent for an issue and write the Role line and owner label. Use when creating or reassigning a role issue or when the role is unclear. | Coordinator |
+| 28 | `rpm-deb-packaging` | Build and verify .rpm and .deb packages with cargo-deb and cargo-generate-rpm. Use for Qa packaging tasks after the release gate passes. | Qa |
+| 29 | `rust-code-review` | Review Rust changes with automatic checks and a checklist and report findings by severity. Use for Reviewer tasks. | Reviewer |
+| 30 | `rust-ddd-clean-arch-dev` | Implement Rust code with DDD and Clean Architecture in the right layer with typed errors and no panics. Use for any Developer task. | Developer |
+| 31 | `rust-ddd` | Create, review, and verify Domain-Driven Design (DDD) architecture in Rust projects (layered / hexagonal, Cargo workspace or single crate). Use this skill whenever the user wants to scaffold a Rust project with DDD, add a bounded context, aggregate, entity, value object, repository, domain event, or use case, or asks to check, audit, or refactor Rust code for layer violations, anemic domain models, or dependency-rule breaks. Trigger even if they only say "clean architecture", "hexagonal", "ports and adapters", "domain layer", or "bounded context" in a Rust context. | Developer |
+| 32 | `rust-tdd` | TDD workflow for Rust with data-driven tests and a fmt, clippy, test gate. Use when writing behavior, fixing bugs, or checking that code is green. | Developer |
+| 33 | `rust-test-writing` | Write Rust unit, integration, and data-driven tests from requirements and find untested functions. Use for Tester tasks. | Tester |
+| 34 | `step-protocol` | Split every task into think, plan, execute small steps, and split again when a step fails or is too big. Use it for every issue and every task that cannot be finished in one short attempt, in any role. | Analyzer, Architect, Coordinator, Designer, Developer, Qa |
+| 35 | `terse-mode` | Write notes, step results, and agent-to-agent comments in short caveman style to save tokens, and compress memory files. Use it for mem.py notes and results, checkpoint and handoff comments, and when a memory file or AGENTS.md grows too large. Not for Human-facing text, requirements, code, or commits. | Analyzer, Architect, Coordinator, Designer, Developer, Qa |
+| 36 | `ux-ui-design` | Produce UX flows and UI specs (screens, states, accessibility) as wiki pages. Use for Designer tasks. | Designer |
 
 #### How we improved the skills and agents in the harness 
 
 I entered the following prompts in the claude.ai web prompt to improve the md files :
 
-1. as i only have 32kb context size, i need to implement agents.md files, skills that will use different levels of agentic memories, and try to split every step of the work into smaller parts if it can not finish in the first attempt. splitting would be like  ( think, plan, execute small pieces step by step) 
+1. as i only have 64kb context size, i need to implement agents.md files, skills that will use different levels of agentic memories, and try to split every step of the work into smaller parts if it can not finish in the first attempt. splitting would be like  ( think, plan, execute small pieces step by step) 
 2. also can you make use of rtk, caveman , graphify , ponytail in your md files and scripts, and reprepare the harness as zip file?
-3. cut the skills in https://github.com/leonardomso/rust-skills into smaller skills so that i can load them, and execute them one by one , my maximum context size is 32k
+3. cut the skills in https://github.com/leonardomso/rust-skills into smaller skills so that i can load them, and execute them one by one , my maximum context size is 64k
 
 Claude.ai gave the following response with the corrected scripts zip file :
 
 >**1. Small context**
->The zip now has 35 skills, all validated. AGENTS.md is about 800–900 tokens, each skill is 350–700 tokens, and all skill descriptions together are about 1.5K tokens.
->I assumed "32kb" means a 32K-token window. If it is really 32 KB (about 8K tokens), set MEM_CONTEXT_TOKENS=8000 and link only the skills each role needs.
+>The zip now has 36 skills, all validated. AGENTS.md is about 800–900 tokens, each skill is 350–700 tokens, and all skill descriptions together are about 1.5K tokens.
+>I assumed "64kb" means a 64K-token window. If it is really 64 KB (about 16K tokens), set MEM_CONTEXT_TOKENS=16000 and link only the skills each role needs.
 >Layered memory. The new agent-memory skill and its mem.py script keep only the current step in context. Plan, step results and notes live in .mem/<issue>/, which survives /reset. A checkpoint comment on >the Gitea issue lets a lost workspace or another agent resume. The wiki and a graphify graph hold project knowledge, and roles and principles are read in slices.
->Think, plan, execute. The new step-protocol skill plans at most 8 steps, about 4K tokens of work each. A step that fails twice, touches more than 3 files, or prints more than 150 lines is split into 2–4 >smaller steps. Missing information makes the issue blocked. Both AGENTS.md files tell the agent to checkpoint every 3 steps, at 60% context after the step, and at 75% to checkpoint, /reset, then resume. >The heavy role skills each have a "Steps" section with their own split points.
+>Think, plan, execute. The new step-protocol skill plans at most 8 steps, about 8K tokens of work each. A step that fails twice, touches more than 3 files, or prints more than 150 lines is split into 2–4 >smaller steps. Missing information makes the issue blocked. Both AGENTS.md files tell the agent to checkpoint every 3 steps, at 60% context after the step, and at 75% to checkpoint, /reset, then resume. >The heavy role skills each have a "Steps" section with their own split points.
 >Bounded output. get --brief shows the body plus the last 5 comments. The wiki is read in 6000-character parts, and role files, scanners and status reports are capped.
 
 >**2. The four tools**
@@ -434,7 +459,7 @@ Claude.ai gave the following response with the corrected scripts zip file :
 >Run graphify once with /graphify . before the first graph.sh build.
 
 >**3. rust-skills split**
->I split the https://github.com/leonardomso/rust-skills repo into 44 small skills plus a router, packed in rust-skills-split.zip. The whole thing is about 270k tokens, so the cut is much finer than one skill per category. Each module is about 3.5–7.5k tokens by a rough chars/3.3 estimate; I couldn't count with a real tokenizer here. One module plus the router and some code to review fits comfortably in 32k.
+>I split the https://github.com/leonardomso/rust-skills repo into 44 small skills plus a router, packed in rust-skills-split.zip. The whole thing is about 270k tokens, so the cut is much finer than one skill per category. Each module is about 3.5–7.5k tokens by a rough chars/3.3 estimate; I couldn't count with a real tokenizer here. One module plus the router and some code to review fits comfortably in 64k.
 >How I cut it
 >Router: rust-00-router is the only skill to load first, at about 1.4k tokens. It has the one-at-a-time runbook, which modules suit which task, and a table of all modules with their sizes.
 >Modules: rust-01-… to rust-44-… follow the upstream priority order, from Ownership, Errors, Memory and Unsafe down to Linting and Anti-patterns. Big categories are split into parts, for example Async into 4 parts and Memory, API Design and Testing into 3 each. Small ones are combined, such as Conversions with Const.
@@ -455,7 +480,7 @@ Claude.ai gave the following response with the corrected scripts zip file :
 #### Manual Modifications
 
 1. We inserted the following rule into the Coordinator.md file
-   - Write "what did you decide that i did not tell you to decide" into the comment of the gitea issue or wiki of the project.
+   - Write "what did you decide that i did not tell you to decide" into the gitea wiki of the project.
 
 2. In worker AGENTS.md file, i inserted the following lines :
    - If your context gets filled while doing your work, assign the gitea issue back to coordinator,  for split.
@@ -463,9 +488,9 @@ Claude.ai gave the following response with the corrected scripts zip file :
 2. I moved modules of the rust-skills under the rust-code-review/references directory.
     
 
-## Example usage of this harness to develop a tetris game in Rust on Linux Gnome.
+## Example usage of this harness to develop a Purchase List Application in Rust.
 
-0. You have to configure the COORDINATOR1_PERSONAL_ACCESS_TOKEN, WORKER1_PERSONAL_ACCESS_TOKEN, API_KEY . You may find them in previous sections.
+0. You have to configure the GITEA_AGENT_PERSONAL_ACCESS_TOKEN, API_KEY . You may find them in previous sections.
 
 1. Open the terminal and source the rust-agent-infra/release file, source the release file in rust-dev-env.
 
@@ -473,26 +498,36 @@ Claude.ai gave the following response with the corrected scripts zip file :
 
 3. Start LLM services : "cd $RUST_AGENT_INFRA_DIR/services && ./00.main.sh"
 
-4. Create the project's directory in the agent workspace :  "mkdir -p ~/agent-workspace/tetris-project"
- 
-5. Install Harness : "$RUST_AGENT_INFRA_DIR/harness/install.sh ~/agent-workspace/tetris-project"
+4. Create the agent workspace :  "mkdir -p ~/agent-workspace/"
+
+5. Clone the repository into agent workspace : " cd ~/agent-workspace; git clone http://agent:qwe132**@localhost:13000/rust-agentic-org/purchase.git"
+
+6. Go to project directory : "cd  ~/agent-workspace/purchase "
+
+7. Install Harness : "$RUST_AGENT_INFRA_DIR/harness/install.sh ~/agent-workspace/purchase"
   
-6. Login as human1 to the gitea
+8. Login as human to the gitea
 
-7. Select project-01 
+9. Select "purchase"  project from Explorer link found on top of the page.
 
-8. Assign a task to coordinator1 with Subject "Implement Tetris Game in Rust and Gnome" and the body of the task is written in $RUST_AGENT_INFRA_DIR/example-usage/Tetris-in-Rust-with-gtk-rs-Requirements.md file. You may copy and paste.
+10. Click on the "wiki" link , and click on the "Create first page" button
+
+10.1. Set the Title as "01-Project-Definition"
+
+10.2. Copy the content of the file $RUST_AGENT_INFRA_DIR/example-usage/01.project_definition.md and paste it to body part.
+
+10.3. Click "Save" button.
+
+11. Assign a task to agent with Subject "Start the implementation" and the body of the task is the same , "Start the implementation" . 
  
-9. Start Kilo Code CLI Agent : 
+12. Start Kilo Code CLI Agent : 
    - Open a new terminal, 
-   - source the rust-agent-infra/release file ( source ~/workspace/rust-agent-infra/release )
    - source the release file in rust-dev-env (source ~/sdk/rust-dev-env/release )
-   - go to coordinator-workspace ( cd ~/agent-workspace/tetris-project/coordinator-workspace/ )
-   - start the coordinator agent. ( ./start_agent.sh)
-   - write "start by calling coordinator, she will read gitea issues and start the  development cycle." in kilo input.
-   - Kilo agent asked me another question, i also esc'd it, i entered "coordinator should assign the gitea issue to analyzer?", then it started to work.
+   - source the rust-agent-infra/release file ( source ~/workspace/rust-agent-infra/release )
+   - go to project directory ( cd ~/agent-workspace/purchase )
+   - start the agent. ( ./start_agent.sh)
+   - write "Start coordinator agent" in kilo input.
  
-Result : Compaction Exhausted ( After 3 Compactions Gave Up)
  
 
 

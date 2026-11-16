@@ -1,9 +1,30 @@
 # AGENTS.md - Team workflow
 
 Shared by all agents in `.kilo/agents`. Each agent file holds its own role rules. This file holds the flow between them.
-Only channel: Gitea issues + wiki of `project-01`. One shared Gitea account: nobody is assigned. Routing lives in labels and issue text.
+Only channel: Gitea issues + wiki of `current git project`. One shared Gitea account: nobody is assigned. Routing lives in labels and issue text.
 Gitea access: gitea-mcp tools only (`list_issues`, `issue_read`, `issue_write`, `wiki_read`, `wiki_write`, `label_read`, `label_write`). Details in the `gitea-issues` and `gitea-wiki` skills.
 
+
+Startup procedure :
+1. Coordinator reads gitea issues
+2. Coordinator hands-off the issue to the Analyzer
+3. Analyzer hands-off back to coordinator 
+4. Coordinator hands-off to Researcher
+5. Rearcher hands-off back to Coordinator
+6. Coordinator hands-off to Architect
+7. Architect hands-off back to Coordinator
+8. Coordinator hands-off to Designer
+9. Designer hands-off bask to Coordinator
+10. Coordinator hands-ff to Developer
+11. Developer hands-off back to Coordinator
+12. Coordinator hands-off to Tester
+13. Tester hands-off bask to Coordinator
+14. Coordinator hands-off to Reviewer
+15. Reviewer hands-off back to Coordinator
+16. Coordinator hands-off to Qa
+17. Qa hands-off back to Coordinator
+
+   
 ## Team
 Human, Coordinator, Analyzer, Researcher, Architect, Designer, Developer, Tester, Reviewer, Qa.
 
@@ -15,7 +36,8 @@ Human, Coordinator, Analyzer, Researcher, Architect, Designer, Developer, Tester
 | `[Agent] <event>` | first line of each comment | Author. No header = Human | Every agent |
 | status | issue status | `open`, `in-progress`, `done`, `blocked` | Role agent claims and finishes. Coordinator closes |
 
-New issue from the Human with no `to:` label = Coordinator's.
+New issue from the Human that is assigned to coordinator1 user.
+
 
 ## Role issue body
 ```
@@ -74,4 +96,4 @@ Developer and Tester may run in parallel as two issues. Reviewer starts after bo
 - Touch only issues labeled `to:<you>`. Never change the version or put secrets in text.
 - Commit with the issue number. Long results go to the wiki.
 - Write "what did you decide that i did not tell you to decide" into the issue comment or wiki.
-- Context is 32K tokens: small steps, state outside context, tool output under 1.5K.
+- Context is 64K tokens: small steps, state outside context, tool output under 1.5K.

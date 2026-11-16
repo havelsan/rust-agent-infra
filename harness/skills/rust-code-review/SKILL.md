@@ -13,7 +13,7 @@ A review catches what the author cannot see. Automatic checks remove the easy fi
 2. Run the automatic checks. They write `review-report.md`:
 
 ```bash
-$RUST_AGENT_INFRA_DIR/harness/library/skills/rust-code-review/scripts/review_gate.sh <project-dir>
+$RUST_AGENT_INFRA_DIR/harness//rust-code-review/scripts/review_gate.sh <project-dir>
 ```
 
 Any FAIL is a `blocker` until fixed. Tools that are not installed show as SKIPPED. Say so in the review.
@@ -46,7 +46,7 @@ Use with `step-protocol`. 1. Automatic gate. 2. Read the diff per file or per 20
 5. Load the next module. Repeat.
 
 
-Budget rule for a 32k window: router/findings ~3k + one module <=8k + code under review + answer. Keep the code under review below ~10k tokens per pass; for big files review one function or module at a time.
+Budget rule for a 64k window: router/findings ~3k + one module <=8k + code under review + answer. Keep the code under review below ~10k tokens per pass; for big files review one function or module at a time.
 
 ## Which modules for which task
 

@@ -13,7 +13,7 @@ A low download count means little real-world testing and a higher risk of abando
 2. Run:
 
 ```bash
-python3 $RUST_AGENT_INFRA_DIR/harness/library/skills/crate-download-filter/scripts/check_crates.py serde tokio some-small-crate
+python3 $RUST_AGENT_INFRA_DIR/harness//crate-download-filter/scripts/check_crates.py serde tokio some-small-crate
 ```
 
 Output: `PASS`, `FAIL`, or `NOTFOUND` per crate. Exit code 1 if any fail.

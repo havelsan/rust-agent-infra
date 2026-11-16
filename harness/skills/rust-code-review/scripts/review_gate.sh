@@ -6,7 +6,7 @@ dir="${1:-.}"; report="${2:-review-report.md}"
 cd "$dir" || exit 1
 RT="${RUST_AGENT_INFRA_DIR:-}/harness/base-skills/lean-shell/scripts/rt.sh"; [ -x "$RT" ] || RT=""
 command -v cargo >/dev/null || { echo "error: cargo not found" >&2; exit 127; }
-scan="${RUST_AGENT_INFRA_DIR:-}/harness/library/skills/principles-check/scripts/rust_rules_scan.py"
+scan="${RUST_AGENT_INFRA_DIR:-}/harness//principles-check/scripts/rust_rules_scan.py"
 
 fails=0
 {

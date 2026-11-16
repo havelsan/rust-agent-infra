@@ -19,15 +19,15 @@ The Developer builds what the requirements and the Architect's design say. The l
 4. For a new aggregate, generate the skeleton and then edit it:
 
 ```bash
-python3 $RUST_AGENT_INFRA_DIR/harness/library/skills/rust-ddd-clean-arch-dev/scripts/scaffold_aggregate.py crates/domain Order
+python3 $RUST_AGENT_INFRA_DIR/harness//rust-ddd-clean-arch-dev/scripts/scaffold_aggregate.py crates/domain Order
 ```
 
 5. Follow `nasa-rules-solid` while coding. In short: short functions, bounded loops, no recursion, no `unwrap`, no `unsafe`, every error handled, zero warnings.
 6. Run the gate before you finish:
 
 ```bash
-$RUST_AGENT_INFRA_DIR/harness/library/skills/rust-tdd/scripts/tdd_cycle.sh
-python3 $RUST_AGENT_INFRA_DIR/harness/library/skills/principles-check/scripts/rust_rules_scan.py crates/
+$RUST_AGENT_INFRA_DIR/harness//rust-tdd/scripts/tdd_cycle.sh
+python3 $RUST_AGENT_INFRA_DIR/harness//principles-check/scripts/rust_rules_scan.py crates/
 ```
 
 7. Commit with the issue number in the message. Finish with `issue-completion`: list requirement IDs covered and the test result.

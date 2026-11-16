@@ -17,7 +17,7 @@ A test written first proves the requirement is understood and that the test can 
 ## Gate
 
 ```bash
-$RUST_AGENT_INFRA_DIR/harness/library/skills/rust-tdd/scripts/tdd_cycle.sh [-p crate] [test_filter]
+$RUST_AGENT_INFRA_DIR/harness//rust-tdd/scripts/tdd_cycle.sh [-p crate] [test_filter]
 ```
 
 It runs `cargo fmt --check`, `cargo clippy -D warnings`, and `cargo test`, then prints PASS or FAIL for each. A change is done only when all three pass.

@@ -8,7 +8,7 @@ description: Run shell commands with small output using rtk (Rust Token Killer),
 Raw command output is the biggest waste of a small context. `rtk` filters it (cargo test shows failures only, git status is compact). The wrapper uses rtk when the right one is installed and cuts long output when it is not.
 
 ```bash
-RT=$RUST_AGENT_INFRA_DIR/harness/base-skills/lean-shell/scripts/rt.sh
+RT=.kilo/skills/lean-shell/scripts/rt.sh
 $RT cargo test          # failures only
 $RT cargo clippy
 $RT git status          # also: git diff, git log -5

@@ -13,7 +13,7 @@ Qa is the last gate. A defect that passes this gate reaches the user. The gate m
 2. Run the automatic gate:
 
 ```bash
-$RUST_AGENT_INFRA_DIR/harness/library/skills/release-checklist/scripts/release_gate.sh <project-dir>
+$RUST_AGENT_INFRA_DIR/harness//release-checklist/scripts/release_gate.sh <project-dir>
 ```
 
 It prints PASS, FAIL, or WARN per check and exits with the number of failures.

@@ -13,7 +13,7 @@ Tests are the executable form of the requirements. The Tester works from the req
 2. Find what is untested:
 
 ```bash
-python3 $RUST_AGENT_INFRA_DIR/harness/library/skills/rust-test-writing/scripts/find_untested.py <project-dir>
+python3 $RUST_AGENT_INFRA_DIR/harness//rust-test-writing/scripts/find_untested.py <project-dir>
 ```
 
 This lists public functions that no test mentions. It is a gap finder. For line coverage use `cargo llvm-cov` or `cargo tarpaulin` if installed.

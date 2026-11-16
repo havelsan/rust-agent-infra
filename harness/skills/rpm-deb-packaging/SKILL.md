@@ -18,7 +18,7 @@ Users install packages, not source trees. A package with a wrong path or a missi
 2. Build:
 
 ```bash
-$RUST_AGENT_INFRA_DIR/harness/library/skills/rpm-deb-packaging/scripts/build_packages.sh --crate-dir crates/interface --package myapp_interface --out dist
+$RUST_AGENT_INFRA_DIR/harness//rpm-deb-packaging/scripts/build_packages.sh --crate-dir crates/interface --package myapp_interface --out dist
 ```
 
 For a single-crate project, run it without options. The script makes the release build, the `.deb`, and the `.rpm` in `dist/`, and writes `SHA256SUMS`.

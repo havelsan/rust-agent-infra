@@ -15,7 +15,7 @@ Business rules change for business reasons. Databases, protocols, and frameworks
 4. Scaffold the workspace for a new project:
 
 ```bash
-$RUST_AGENT_INFRA_DIR/harness/library/skills/ddd-clean-architecture/scripts/scaffold_workspace.sh my-project ./
+$RUST_AGENT_INFRA_DIR/harness//ddd-clean-architecture/scripts/scaffold_workspace.sh my-project ./
 ```
 
 It creates four crates (`domain`, `application`, `infrastructure`, `interface`) with the dependency direction already set, workspace lints that deny `unwrap`, `expect`, `panic`, and `unsafe`, and a `layers.toml`.
