@@ -22,13 +22,13 @@ Any FAIL is a `blocker` until fixed. Tools that are not installed show as SKIPPE
 4. For each module in references directory,  run the module according to the "Runbook per module" as described below. Never load more than one module at once.
 5. Write findings as `severity | file:line | problem | suggested fix`. Use `blocker`, `major`, `minor`. Quote the line when it is not obvious.
 6. Decide: **approved** (no blocker, no major) or **changes requested**. Comment on the issue (`issue-comment-protocol`) with the decision, counts, and the top findings. Put long reports in the wiki.
-7. Hand the issue back: label `to:Coordinator` (`issue-completion`). Do not fix the code yourself. A reviewer who edits the code reviews their own work.
+7. Hand the issue back: label `agent/Coordinator` (`issue-completion`). Do not fix the code yourself. A reviewer who edits the code reviews their own work.
 
 ## Rules
 
 - Review the change, not the author.
 - Give a reason and a fix for each finding.
-- For each finding create a distinct issue for the Coordinator: `issue_write` `create`, labels `["to:Coordinator", "status:todo"]`, body `Finding of #<n>: <severity> | <file:line> | <problem> | <fix>`.
+- For each finding create a distinct issue for the Coordinator: `issue_write` `create`, labels `["agent/Coordinator", "status/todo"]`, body `Finding of #<n>: <severity> | <file:line> | <problem> | <fix>`.
 - Do not approve what you did not check. Say which parts you did not review.
 - Praise is allowed when a solution is good. It tells the Developer what to repeat.
 
@@ -41,7 +41,7 @@ Use with `step-protocol`. 1. Automatic gate. 2. Read the diff per file or per 20
 
 1. Pick modules from the table below, highest priority first.
 2. Load ONE module. Review the code against it. Output a short findings list: `rule-id | location | fix`.
-3. Review the code. If you find an issue, give a reason and a fix for each finding. For each finding create a distinct issue for the Coordinator: `issue_write` `create`, labels `["to:Coordinator", "status:todo"]`, body `Finding of #<n>: <severity> | <file:line> | <problem> | <fix>`.
+3. Review the code. If you find an issue, give a reason and a fix for each finding. For each finding create a distinct issue for the Coordinator: `issue_write` `create`, labels `["agent/Coordinator", "status/todo"]`, body `Finding of #<n>: <severity> | <file:line> | <problem> | <fix>`.
 4. Unload the module (start a fresh context or drop it), keep only the findings list.
 5. Load the next module. Repeat.
 

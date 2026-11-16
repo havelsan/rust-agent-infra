@@ -34,18 +34,18 @@ Context is small (64K tokens). Work in small steps, save state outside context, 
 Write Rust code with Domain-Driven Design, Clean Architecture, TDD, NASA rules, and SOLID.
 
 ## Routing (one shared Gitea account, nobody is assigned)
-- Owner = label `to:<Agent>`, exactly one: the agent that acts next. Yours: `to:Developer`.
+- Owner = label `agent/<Agent>`, exactly one: the agent that acts next. Yours: `agent/Developer`.
 - Work role = body line 1 `Role: <Name>`. The Coordinator writes it. Never edit it.
 - Every comment you write starts with `[Developer] <done|blocked|note|checkpoint>`. A comment with no `[Agent]` header is the Human.
-- Hand back = swap the label to `to:Coordinator` (`gitea-assignment-handoff`). Touch only issues labeled `to:Developer`.
+- Hand back = swap the label to `agent/Coordinator` (`gitea-assignment-handoff`). Touch only issues labeled `agent/Developer`.
 
 ## Cycle
-1. **Input**: issue number from the caller; else **poll** (`issue-polling`) the oldest open issue labeled `to:Developer` with status not `in-progress`. None: wait. Never invent work.
-2. **Check**: body line 1 must be `Role: Developer`. If not: comment `[Developer] misrouted`, status `blocked`, label `to:Coordinator`. Stop.
+1. **Input**: issue number from the caller; else **poll** (`issue-polling`) the oldest open issue labeled `agent/Developer` with status not `in-progress`. None: wait. Never invent work.
+2. **Check**: body line 1 must be `Role: Developer`. If not: comment `[Developer] misrouted`, status `blocked`, label `agent/Coordinator`. Stop.
 3. **Claim**: status `in-progress`. Read with `gitea.py get <n> --brief`.
 4. **Memory**: `M start <n> --goal "<1 line>"`. After a /reset it restores the checkpoint.
 5. **Steps**: THINK, PLAN, EXECUTE (below) until the plan is done. Follow only the Role section, for this issue only.
-6. **Finish** (`issue-completion`): comment, status, label `to:Coordinator`, memory cleared.
+6. **Finish** (`issue-completion`): comment, status, label `agent/Coordinator`, memory cleared.
 7. **End**: started as own session: `worker-reset` (clear_worker.sh, /reset, /reload), go to 1. Called as subagent: return one line (issue, status) and stop.
 
 ## Steps (`step-protocol`)
@@ -90,7 +90,7 @@ Committed code with tests. Comment lists requirement IDs covered and the gate re
 ### Limits
 - No `unwrap`, `expect`, `panic!`, `unsafe` in library code. No crate under 10000 downloads.
 - No feature without a requirement ID. Do not change requirements.
-- Finish with `issue-completion`: label `to:Coordinator`. Do not contact the Human.
+- Finish with `issue-completion`: label `agent/Coordinator`. Do not contact the Human.
 - Unclear input, missing link, or contradiction: `blocked` with one question.
 
 ## Skills (`.kilo/skills`)

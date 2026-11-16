@@ -13,7 +13,7 @@ Kilo shows them as `gitea_<tool>` when the MCP server is named `gitea`. Every ca
 
 | Need | Tool | Key arguments |
 | --- | --- | --- |
-| List | `list_issues` | `state=open`, `type=issues`, `labels=["to:Developer"]`, `per_page=20` |
+| List | `list_issues` | `state=open`, `type=issues`, `labels=["agent/Developer"]`, `per_page=20` |
 | Read | `issue_read` `method=get` | `issue_number` |
 | Read comments | `issue_read` `method=get_comments` | `issue_number`, `per_page=5`, `page` |
 | Create | `issue_write` `method=create` | `title`, `body`, `labels=[names]` |
@@ -32,10 +32,10 @@ Kilo shows them as `gitea_<tool>` when the MCP server is named `gitea`. Every ca
 
 | Label | Meaning |
 | --- | --- |
-| `to:<Agent>` | Exactly one per open issue. The agent that acts next. `Coordinator`, `Analyzer`, `Researcher`, `Architect`, `Designer`, `Developer`, `Tester`, `Reviewer`, `Qa`, `Human` |
-| `status:todo`, `status:in-progress`, `status:blocked`, `status:done` | Exactly one per open issue. Gitea only knows open and closed |
+| `agent/<Agent>` | Exactly one per open issue. The agent that acts next. `Coordinator`, `Analyzer`, `Researcher`, `Architect`, `Designer`, `Developer`, `Tester`, `Reviewer`, `Qa`, `Human` |
+| `status/todo`, `status/in-progress`, `status/blocked`, `status/done` | Exactly one per open issue. Gitea only knows open and closed |
 
-- `replace_labels` replaces ALL labels. Take the current labels from `issue_read get`, swap the `to:` and `status:` entries, keep the rest, and send the full list. Change owner and status in one call.
+- `replace_labels` replaces ALL labels. Take the current labels from `issue_read get`, swap the `agent/` and `status/` entries, keep the rest, and send the full list. Change owner and status in one call.
 - `add_labels` and `replace_labels` fail on a label that does not exist. Create labels first (setup below).
 
 ## Setup (once per repository)
@@ -44,16 +44,16 @@ The Coordinator checks with `label_read` (method `list`). For each missing label
 
 | Labels | Color |
 | --- | --- |
-| `status:todo` | `#c5def5` |
-| `status:in-progress` | `#fbca04` |
-| `status:blocked` | `#d93f0b` |
-| `status:done` | `#0e8a16` |
-| `to:Coordinator`, `to:Analyzer`, `to:Researcher`, `to:RequirementsEngineer`, `to:Architect`, `to:Designer`, `to:Developer`, `to:Tester`, `to:Reviewer`, `to:Qa` | `#5319e7` |
-| `to:Human` | `#b60205` |
+| `status/todo` | `#c5def5` |
+| `status/in-progress` | `#fbca04` |
+| `status/blocked` | `#d93f0b` |
+| `status/done` | `#0e8a16` |
+| `agent/Coordinator`, `agent/Analyzer`, `agent/Researcher`, `agent/RequirementsEngineer`, `agent/Architect`, `agent/Designer`, `agent/Developer`, `agent/Tester`, `agent/Reviewer`, `agent/Qa` | `#5319e7` |
+| `agent/Human` | `#b60205` |
 
 ## Rules
 
 - Write comments with `issue-comment-protocol`. Hand off with `gitea-assignment-handoff`.
-- Touch only issues that carry your own `to:` label.
+- Touch only issues that carry your own `agent/` label.
 - Never close an issue you did not work on. The Coordinator closes.
 - Never put tokens or passwords in an issue.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build wiki page files for project requirements from requirement lines.
 
-Input lines look like:  REQ-001: The system shall ... [status: accepted] [source: #12]
+Input lines look like:  REQ-001: The system shall ... [status/ accepted] [source: #12]
 Writes markdown files to $MEM_DIR/wiki-out (default .mem/wiki-out):
   Requirements-Index.md (table), Requirements-Index-2.md ... when a page passes --max-chars,
   and with --by-prefix one page per prefix group (Requirements-FR.md).
@@ -30,7 +30,7 @@ for f in a.files:
         if not m:
             continue
         rid, text = m.group(1), m.group(2)
-        status = re.search(r"\[status:\s*([^\]]+)\]", text)
+        status = re.search(r"\[status/\s*([^\]]+)\]", text)
         source = re.search(r"\[source:\s*([^\]]+)\]", text)
         clean = re.sub(r"\s*\[(?:status|source):[^\]]*\]", "", text)
         if rid in rows and rows[rid][0] != clean:

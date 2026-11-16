@@ -271,18 +271,24 @@ Before starting to work with agents we create the folowing organization, users a
    5. Click on rust-agentic-org and click on settings
    6. Click on "Labels" on left side panel.
    7. Click on New Label
-   8. Define the following labels:
-   8.1. to:Human
-   8.2. to:Coordinator
-   8.3. to:Analyzer
-   8.4. to:Architect
-   8.5. to:Designer
-   8.6. to:Developer
-   8.7. to:Qa
-   8.8. to:RequirementsEngineer
-   8.9. to:Reviewer
-   8.10. to:Tester
+   8. Define the following labels ( agent/ and status/ labels can be mutually exclusive).  important: select "Exclusive"  while creating the label:
+   8.1. agent/Human
+   8.2. agent/Coordinator
+   8.3. agent/Analyzer
+   8.4. agent/Architect
+   8.5. agent/Designer
+   8.6. agent/Developer
+   8.7. agent/Qa
+   8.8. agent/RequirementsEngineer
+   8.9. agent/Reviewer
+   8.10. agent/Tester
+   8.11. status/todo
+   8.12. status/in-progress
+   8.13. status/blocked
+   8.14. status/done
    
+
+ 
 
 2. Create Users (human, agent ( the AI user) ) :  
 

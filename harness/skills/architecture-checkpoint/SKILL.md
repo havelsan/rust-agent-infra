@@ -16,8 +16,8 @@ Architecture drifts quietly while Developer issues are closed one by one. A chec
 
 ## Procedure
 
-1. Check for an open one: `list_issues` with `state=open`, `labels=["to:Architect"]`. If a title starts with `Architecture checkpoint`, stop. One is already open.
-2. Create the issue with `issue_write` `method=create`. Title: `Architecture checkpoint <date>` (`date +%F`). Labels: `["to:Architect", "status:todo"]`. Body:
+1. Check for an open one: `list_issues` with `state=open`, `labels=["agent/Architect"]`. If a title starts with `Architecture checkpoint`, stop. One is already open.
+2. Create the issue with `issue_write` `method=create`. Title: `Architecture checkpoint <date>` (`date +%F`). Labels: `["agent/Architect", "status/todo"]`. Body:
 
 ```
 Role: Architect

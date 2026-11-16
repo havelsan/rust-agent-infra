@@ -16,7 +16,7 @@ The Coordinator turns a goal into work one agent session can finish. A role agen
 4. Write each item with: a one-line goal, inputs (issue numbers, wiki pages, requirement IDs), acceptance criteria that can be checked, output, and the role. Use `role-selection` when the role is not obvious. Plan at most 8 items. Save the plan with `mem.py note` or `mem.py plan`.
 5. Create the issues one by one with `issue_write` `method=create`:
    - `title`: short and specific.
-   - `labels`: `["to:<Role>", "status:todo"]`.
+   - `labels`: `["agent/<Role>", "status/todo"]`.
    - `body`:
 
 ```
@@ -29,8 +29,8 @@ Acceptance: every finding has a severity.
 Output: wiki page Requirements Review, comment with counts.
 ```
 
-6. Comment on the parent issue with the list of created issues. Set the parent to `status:in-progress` (`replace_labels`, owner stays `to:Coordinator`).
-7. Dispatch: call the agent named in each new `to:` label (see your agent file).
+6. Comment on the parent issue with the list of created issues. Set the parent to `status/in-progress` (`replace_labels`, owner stays `agent/Coordinator`).
+7. Dispatch: call the agent named in each new `agent/` label (see your agent file).
 
 ## Sizing rule
 
@@ -38,7 +38,7 @@ One issue should take one agent session. If an item needs two roles (for example
 
 ## Order
 
-Agents run one after another. Create a dependent issue only when the earlier issue is `status:done` and verified. Do not create issues "for later". A waiting issue labeled `to:Coordinator` lands in your own queue.
+Agents run one after another. Create a dependent issue only when the earlier issue is `status/done` and verified. Do not create issues "for later". A waiting issue labeled `agent/Coordinator` lands in your own queue.
 
 ## Steps (split points)
 

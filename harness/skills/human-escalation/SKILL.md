@@ -37,6 +37,6 @@ Do not escalate what the project documents already answer, or small choices insi
 Reply with a comment on this issue. The work is paused until then.
 ```
 
-4. Hand the issue to the Human: `replace_labels` with `to:Human` and `status:blocked`, other labels unchanged.
+4. Hand the issue to the Human: `replace_labels` with `agent/Human` and `status/blocked`, other labels unchanged.
 5. Stop work on that issue. Continue other issues that do not depend on the answer.
-6. The Human answers with a plain comment (no `[Agent]` header). A newest comment without a header on a `to:Human` issue is the answer. Relabel to `to:Coordinator` and `status:in-progress`, record the decision in the wiki if it affects later work, and continue.
+6. The Human answers with a plain comment (no `[Agent]` header). A newest comment without a header on a `agent/Human` issue is the answer. Relabel to `agent/Coordinator` and `status/in-progress`, record the decision in the wiki if it affects later work, and continue.

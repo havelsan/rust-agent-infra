@@ -5,7 +5,7 @@ description: Choose the role agent for an issue and write the Role line and owne
 
 # role-selection
 
-Each role is an agent in `.kilo/agents/<Role>.md`. The issue names the role in two places: the body line `Role: <Name>` and the label `to:<Name>`. A missing or wrong role wastes a whole agent session, so name it explicitly.
+Each role is an agent in `.kilo/agents/<Role>.md`. The issue names the role in two places: the body line `Role: <Name>` and the label `agent/<Name>`. A missing or wrong role wastes a whole agent session, so name it explicitly.
 
 ## Role guide
 
@@ -30,7 +30,7 @@ python3 $RUST_AGENT_INFRA_DIR/harness/coordinator-skills/role-selection/scripts/
 
 2. Confirm by reading the task. The script counts keywords only. "Test the parser design" is Architect or Reviewer work, not Tester work.
 3. If two roles fit, split the task into two issues. One issue, one role.
-4. Write the role as the first line of the issue body, exactly `Role: Developer`, and add the label `to:Developer` (`gitea-issues`). The agent checks that line against its own name and returns a mismatch as `misrouted`.
+4. Write the role as the first line of the issue body, exactly `Role: Developer`, and add the label `agent/Developer` (`gitea-issues`). The agent checks that line against its own name and returns a mismatch as `misrouted`.
 
 ## Special cases
 

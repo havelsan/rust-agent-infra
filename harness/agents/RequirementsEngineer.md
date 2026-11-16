@@ -5,14 +5,6 @@ permission:
   edit: deny
   task:
     "*": deny
-    Analyzer: allow
-    Researcher: allow
-    Architect: allow
-    Designer: allow
-    Developer: allow
-    Tester: allow
-    Reviewer: allow
-    Qa: allow
   skill:
     "*": deny
     gitea-issues: allow

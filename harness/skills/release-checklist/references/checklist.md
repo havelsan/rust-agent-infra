@@ -9,7 +9,7 @@
 
 ## By reading
 - Every `accepted` requirement in the wiki `Requirements Index` is `implemented` or `verified`, with a test.
-- No issue with `status:todo`, `status:in-progress`, or `status:blocked` that belongs to this release.
+- No issue with `status/todo`, `status/in-progress`, or `status/blocked` that belongs to this release.
 - The latest `Architecture Status` page has no open `high` finding.
 - The Reviewer approved the last change set.
 - Installation and removal were tried on a clean system (see `rpm-deb-packaging`).

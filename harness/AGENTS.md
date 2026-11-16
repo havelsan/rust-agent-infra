@@ -7,31 +7,33 @@ Gitea access: gitea-mcp tools only (`list_issues`, `issue_read`, `issue_write`, 
 
 Startup procedure :
 1. Coordinator reads gitea issues
-2. Coordinator hands-off the issue to the Analyzer
-3. Analyzer hands-off back to coordinator 
-4. Coordinator hands-off to Researcher
-5. Rearcher hands-off back to Coordinator
-6. Coordinator hands-off to Architect
-7. Architect hands-off back to Coordinator
-8. Coordinator hands-off to Designer
-9. Designer hands-off bask to Coordinator
-10. Coordinator hands-ff to Developer
-11. Developer hands-off back to Coordinator
-12. Coordinator hands-off to Tester
-13. Tester hands-off bask to Coordinator
-14. Coordinator hands-off to Reviewer
-15. Reviewer hands-off back to Coordinator
-16. Coordinator hands-off to Qa
-17. Qa hands-off back to Coordinator
+2. Coordinator hands-off the issue to the RequirementsEngineer
+3. RequirementsEngineer hands-off back to coordinator
+4. Coordinator hands-off the issue to the Analyzer
+5. Analyzer hands-off back to coordinator 
+6. Coordinator hands-off to Researcher
+7. Rearcher hands-off back to Coordinator
+8. Coordinator hands-off to Architect
+9. Architect hands-off back to Coordinator
+10. Coordinator hands-off to Designer
+11. Designer hands-off bask to Coordinator
+12. Coordinator hands-ff to Developer
+13. Developer hands-off back to Coordinator
+14. Coordinator hands-off to Tester
+15. Tester hands-off bask to Coordinator
+16. Coordinator hands-off to Reviewer
+17. Reviewer hands-off back to Coordinator
+18. Coordinator hands-off to Qa
+19. Qa hands-off back to Coordinator
 
    
 ## Team
-Human, Coordinator, Analyzer, Researcher, Architect, Designer, Developer, Tester, Reviewer, Qa.
+Human, Coordinator, RequirementsEngineer, Analyzer, Researcher, Architect, Designer, Developer, Tester, Reviewer, Qa.
 
 ## Routing fields
 | Field | Where | Meaning | Written by |
 |---|---|---|---|
-| `to:<Agent>` | label, exactly one | Who acts next. `to:Human` = waiting for the Human | Coordinator sets it. A role agent only swaps it to `to:Coordinator` |
+| `agent/<Agent>` | label, exactly one | Who acts next. `agent/Human` = waiting for the Human | Coordinator sets it. A role agent only swaps it to `agent/Coordinator` |
 | `Role: <Name>` | body line 1 | Work role of this issue. Never changes | Coordinator |
 | `[Agent] <event>` | first line of each comment | Author. No header = Human | Every agent |
 | status | issue status | `open`, `in-progress`, `done`, `blocked` | Role agent claims and finishes. Coordinator closes |
@@ -54,14 +56,14 @@ One issue, one role, one session. Large goals are split into phases by the Coord
 Human --goal--> Coordinator --Role issue--> Analyzer
                      ^                         |
                      |  every role returns     v
-                     +---- to:Coordinator <-- Researcher, Architect, Designer,
+                     +---- agent/Coordinator <-- Researcher, Architect, Designer,
                                               Developer + Tester, Reviewer, Qa
 ```
 The Coordinator is the hub. Roles never hand to each other and never contact the Human. After each return the Coordinator verifies, then closes or sends the next issue.
 
 | Stage | Agent | Needs | Delivers | Skip when |
 |---|---|---|---|---|
-| 1 | Analyzer | Human requirements | Wiki `Requirements Review`, findings per severity | Requirements already checked |
+| 1 | Analyzer and RequirementsEngineer | Human requirements | Wiki `Requirements Review`, findings per severity | Requirements already checked |
 | 2 | Researcher | Stated need, constraints | Crate table + recommendation (crates over 10000 downloads) | No new crate needed |
 | 3 | Architect | Requirements | Wiki `Domain Model`, ADRs (`proposed`), `Architecture Status` | Design unchanged |
 | 4 | Designer | Requirements, users | Wiki `UI Spec - <n>` | No UI |
@@ -73,11 +75,11 @@ The Coordinator is the hub. Roles never hand to each other and never contact the
 Developer and Tester may run in parallel as two issues. Reviewer starts after both are `done`.
 
 ## One handoff, step by step
-1. Coordinator creates the issue: `Role:` line, body template, label `to:<Role>`. Then calls that agent with `Issue #<n>`.
-2. Role agent checks line 1 matches its own name. Mismatch: comment `[Agent] misrouted`, status `blocked`, label `to:Coordinator`.
+1. Coordinator creates the issue: `Role:` line, body template, label `agent/<Role>`. Then calls that agent with `Issue #<n>`.
+2. Role agent checks line 1 matches its own name. Mismatch: comment `[Agent] misrouted`, status `blocked`, label `agent/Coordinator`.
 3. It claims (`in-progress`), works in steps, saves state to `.mem/<n>/` and checkpoint comments.
-4. It finishes: result comment `[Agent] done`, status `done`, label `to:Coordinator`.
-5. Coordinator checks the acceptance criteria. Pass: close, add follow-ups. Fail: rewrite the issue, label `to:<Role>` again.
+4. It finishes: result comment `[Agent] done`, status `done`, label `agent/Coordinator`.
+5. Coordinator checks the acceptance criteria. Pass: close, add follow-ups. Fail: rewrite the issue, label `agent/<Role>` again.
 
 ## Loops
 - **Review fails**: Reviewer returns `changes requested`. Coordinator opens a Developer issue with the findings. Then a new Reviewer issue.
@@ -86,14 +88,14 @@ Developer and Tester may run in parallel as two issues. Reviewer starts after bo
 - **Every 3 to 5 finished Developer issues, and before release**: Coordinator runs an architecture checkpoint (Architect issue).
 
 ## Blocked and Human
-- Any role: unclear, contradictory or missing input: `blocked`, one question, label `to:Coordinator`.
-- Coordinator fixes unclear text itself. Critical, irreversible or contradictory: label `to:Human`, one question, 2 to 4 options, a recommendation.
-- The Human answers with a comment (no header) and may relabel `to:Coordinator`. Headerless answers on `to:Human` issues are picked up anyway.
+- Any role: unclear, contradictory or missing input: `blocked`, one question, label `agent/Coordinator`.
+- Coordinator fixes unclear text itself. Critical, irreversible or contradictory: label `agent/Human`, one question, 2 to 4 options, a recommendation.
+- The Human answers with a comment (no header) and may relabel `agent/Coordinator`. Headerless answers on `agent/Human` issues are picked up anyway.
 - Analyzer `high` finding, an ADR that changes the intended architecture, version and release scope: always go to the Human through the Coordinator.
 
 ## Rules for all
 - Rust only. No `unwrap`, `expect`, `panic!`, `unsafe` in library code. Crates need 10000+ downloads.
-- Touch only issues labeled `to:<you>`. Never change the version or put secrets in text.
+- Touch only issues labeled `agent/<you>`. Never change the version or put secrets in text.
 - Commit with the issue number. Long results go to the wiki.
 - Write "what did you decide that i did not tell you to decide" into the issue comment or wiki.
 - Context is 64K tokens: small steps, state outside context, tool output under 1.5K.
