@@ -4,7 +4,7 @@ description: Split a Human goal into small, ordered role issues with one role ea
 ---
 
 # issue-triage
-
+Always use gitea-mcp mcp server to make any operations related to gitea.
 The Coordinator turns a goal into work one agent session can finish. A role agent starts with an empty context, so each issue must stand alone and fit one role.
 
 ## Procedure

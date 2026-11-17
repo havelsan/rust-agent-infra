@@ -4,7 +4,7 @@ description: Read, create, comment on, label, route, and close current git proje
 ---
 
 # gitea-issues
-
+Always use gitea-mcp mcp server to make any operations related to gitea.
 Gitea issues are the only message channel between the Human and the agents. All agents share one Gitea account, so nobody is assigned. Routing lives in labels and in the comment header (see `AGENTS.md`).
 
 ## Tools (gitea-mcp)

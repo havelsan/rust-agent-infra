@@ -22,6 +22,8 @@ then
 	exit 1
 fi
 
+PROJECT_NAME=$(basename $WORKSPACE)
+
 mkdir -p $WORKSPACE
 
 cd $WORKSPACE
@@ -38,10 +40,10 @@ cp  -Rf $RUST_AGENT_INFRA_DIR/harness/rules .kilo/rules
     
 echo "
 
- rtk init --agent kilocode
- graphify kilo install
- graphify .
- graphify cluster-only .
+# rtk init --agent kilocode
+# graphify kilo install
+# graphify .
+# graphify cluster-only .
 	
  kilo config check
  #KILO_CONFIG=.kilo/kilo.jsonc caveman run -- kilo config check
@@ -52,6 +54,8 @@ echo "
 chmod +x start_agent.sh
     
 cp -f $RUST_AGENT_INFRA_DIR/harness/kilo.jsonc .kilo/kilo.jsonc
+
+cp -f $RUST_AGENT_INFRA_DIR/harness/AGENTS.md  .
      
 PONYTAIL_MJS=$(find $RUST_AGENT_INFRA_DIR/dev-tools -name ponytail.mjs)
 echo "PONYTAIL_MJS=$PONYTAIL_MJS"
@@ -60,7 +64,13 @@ echo "RUST_DEV_ENV=$RUST_DEV_ENV"
 perl -pi -e "s#RUST_DEV_ENV#$RUST_DEV_ENV#g" .kilo/kilo.jsonc
 echo "GITEA_ACCESS_TOKEN=$GITEA_AGENT_PERSONAL_ACCESS_TOKEN"
 perl -pi -e "s#_GITEA_ACCESS_TOKEN_#$GITEA_AGENT_PERSONAL_ACCESS_TOKEN#g" .kilo/kilo.jsonc
+echo "GITEA_ORG=$GITEA_ORG"
+perl -pi -e "s#_GITEA_ORG_#$GITEA_ORG#g" .kilo/kilo.jsonc AGENTS.md
+echo "GITEA_OWNER=$GITEA_OWNER"
+perl -pi -e "s#_GITEA_OWNER_#$GITEA_OWNER#g" .kilo/kilo.jsonc AGENTS.md
+echo "GITEA_REPO=$PROJECT_NAME"
+perl -pi -e "s#_GITEA_REPO_#$PROJECT_NAME#g" .kilo/kilo.jsonc AGENTS.md
 echo "OPENAI_API_KEY=$OPENAI_API_KEY"
 perl -pi -e "s#OPENAI_API_KEY#$OPENAI_API_KEY#g" .kilo/kilo.jsonc
 
-cp -f $RUST_AGENT_INFRA_DIR/harness/AGENTS.md  .
+

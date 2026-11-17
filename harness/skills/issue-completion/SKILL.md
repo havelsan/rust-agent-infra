@@ -4,7 +4,7 @@ description: Finish a role issue with the standard comment, status label, hand b
 ---
 
 # issue-completion
-
+Always use gitea-mcp mcp server to make any operations related to gitea.
 After an agent finishes, its context is cleared or dropped. Whatever is not in the issue comment, the wiki, or the repository is lost. Completing an issue properly is part of the work, not paperwork.
 
 ## Procedure

@@ -1,8 +1,14 @@
 # AGENTS.md - Team workflow
 
+/memory on
+
+Always use gitea-mcp mcp server to make any operations related to gitea.
+
+Always use `owner="_GITEA_ORG_"` and `repo="_GITEA_REPO_"` for all Gitea MCP tool calls.
+
 Shared by all agents in `.kilo/agents`. Each agent file holds its own role rules. This file holds the flow between them.
 Only channel: Gitea issues + wiki of `current git project`. One shared Gitea account: nobody is assigned. Routing lives in labels and issue text.
-Gitea access: gitea-mcp tools only (`list_issues`, `issue_read`, `issue_write`, `wiki_read`, `wiki_write`, `label_read`, `label_write`). Details in the `gitea-issues` and `gitea-wiki` skills.
+Gitea access: You can use only gitea-mcp mcp tool. (`list_issues`, `issue_read`, `issue_write`, `wiki_read`, `wiki_write`, `label_read`, `label_write`). Details in the `gitea-issues` and `gitea-wiki` skills.
 
 
 Startup procedure :

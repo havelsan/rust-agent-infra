@@ -48,6 +48,30 @@
     "enabled": false
   },
 
+  "mcp": {
+    "gitea": {
+      "type": "local",
+      "enabled": true,
+      // -O loads only these tools: fewer tool schemas in the 32K context.
+      "command": [
+        "gitea-mcp", "-t", "stdio", 
+        "-O", "list_issues,issue_read,issue_write,wiki_read,wiki_write,label_read,label_write"
+      ],
+      "environment": {
+        "GITEA_HOST": "http://localhost:13000",
+        "GITEA_ACCESS_TOKEN": "_GITEA_ACCESS_TOKEN_",
+        "GITEA_ORG":"_GITEA_ORG_",
+        "GITEA_OWNER": "_GITEA_OWNER_",
+        "GITEA_REPO":"_GITEA_REPO_"
+      }
+    }
+  },
+
+  // Agents run unattended: allow the MCP tools (tool names are gitea_<tool>).
+  "permission": {
+    "gitea_*": "allow"
+  },
+
   "plugin": [
     "PONYTAIL_MJS"
   ]

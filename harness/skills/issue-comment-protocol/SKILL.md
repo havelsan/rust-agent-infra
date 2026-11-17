@@ -4,6 +4,7 @@ description: Standard format for every agent comment on an issue - author header
 ---
 
 # issue-comment-protocol
+Always use gitea-mcp mcp server to make any operations related to gitea.
 
 Agents start each task with an empty context, so the issue comment is the only memory that survives. A fixed format lets the next agent (or the Human) find the outcome in seconds.
 

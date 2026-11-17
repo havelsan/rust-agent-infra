@@ -4,7 +4,7 @@ description: Rules for passing an issue between Human, Coordinator, and role age
 ---
 
 # gitea-assignment-handoff
-
+Always use gitea-mcp mcp server to make any operations related to gitea.
 All agents share one Gitea account, so the owner of an issue is its `agent/<Agent>` label. The agent named by that label must act next. A wrong or missing handoff stops the whole team, so change the labels in the same step as the comment.
 
 ## Who hands off to whom

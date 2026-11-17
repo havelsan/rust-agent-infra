@@ -22,7 +22,6 @@ permission:
     rust-code-review: allow
     principles-check: allow
     nasa-rules-solid: allow
-    rust-code-review: allow
     karpathy-guidelines: allow
 ---
 

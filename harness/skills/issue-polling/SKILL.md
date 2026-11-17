@@ -4,7 +4,7 @@ description: Find the next open issue labeled for this agent, resuming an interr
 ---
 
 # issue-polling
-
+Always use gitea-mcp mcp server to make any operations related to gitea.
 An agent has no task list of its own. The open Gitea issues labeled `agent/<You>` are the task list. When the Coordinator calls you as a subagent it gives the issue number. Then skip polling and use that issue.
 
 ## Procedure

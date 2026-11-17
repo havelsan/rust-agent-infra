@@ -37,6 +37,8 @@ export OPENAI_BASE_URL="http://localhost:3000/v1"
 export OPENAI_MODEL=/local_model
 
 export GITEA_AGENT_PERSONAL_ACCESS_TOKEN=2f9a261f35a9bbd8c2e054165b3d55b4cd1f43ea
+export GITEA_ORG="rust-agentic-org"
+export GITEA_OWNER="rust-agentic-org"
 
 echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 echo ">>> RUST_AGENT_INFRA_DIR=$RUST_AGENT_INFRA_DIR "

@@ -4,7 +4,7 @@ mode: primary
 permission:
   edit: deny
   task:
-    "*": deny
+    "*": allow
     Analyzer: allow
     Researcher: allow
     RequirementsEngineer: allow

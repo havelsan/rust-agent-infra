@@ -4,6 +4,7 @@ description: List, read, create, and update current git project Gitea wiki pages
 ---
 
 # gitea-wiki
+Always use gitea-mcp mcp server to make any operations related to gitea.
 
 The wiki holds long-lived project knowledge. Issues hold conversations and tasks. A result that other roles need later goes in the wiki, and the issue comment links to it.
 

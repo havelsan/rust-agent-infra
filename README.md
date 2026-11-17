@@ -532,7 +532,7 @@ Claude.ai gave the following response with the corrected scripts zip file :
    - source the rust-agent-infra/release file ( source ~/workspace/rust-agent-infra/release )
    - go to project directory ( cd ~/agent-workspace/purchase )
    - start the agent. ( ./start_agent.sh)
-   - write "Start coordinator agent" in kilo input.
+   - write "trigger coordinator agent for project implementation by first reading the gitea issues" in kilo input.
  
  
 
